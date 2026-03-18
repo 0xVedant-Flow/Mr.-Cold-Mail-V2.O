@@ -9,6 +9,7 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import { z } from "zod";
 import Papa from "papaparse";
+import { google } from "googleapis";
 
 dotenv.config();
 
@@ -43,6 +44,62 @@ if (!stripeSecret) {
 const stripe = new Stripe(stripeSecret || "sk_test_placeholder", {
   apiVersion: "2026-02-25.clover",
 });
+
+// Google OAuth Configuration
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  `${process.env.APP_URL}/api/auth/google/callback`
+);
+
+const GMAIL_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
+
+// Helper: Get Gmail Client for User
+async function getGmailClient(userId: string) {
+  const { data: account, error } = await supabase
+    .from("gmail_accounts")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !account) {
+    throw new Error("Gmail account not connected");
+  }
+
+  const client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${process.env.APP_URL}/api/auth/google/callback`
+  );
+
+  client.setCredentials({
+    access_token: account.access_token,
+    refresh_token: account.refresh_token,
+    expiry_date: Number(account.expiry_date),
+  });
+
+  // Check if token is expired and refresh if needed
+  if (Date.now() >= Number(account.expiry_date)) {
+    const { credentials } = await client.refreshAccessToken();
+    client.setCredentials(credentials);
+
+    // Update DB with new tokens
+    await supabase
+      .from("gmail_accounts")
+      .update({
+        access_token: credentials.access_token,
+        expiry_date: credentials.expiry_date,
+        // refresh_token might not be returned on refresh
+        ...(credentials.refresh_token ? { refresh_token: credentials.refresh_token } : {}),
+      })
+      .eq("user_id", userId);
+  }
+
+  return google.gmail({ version: 'v1', auth: client });
+}
 
 // Middleware
 app.use(cors());
@@ -365,6 +422,160 @@ app.post("/api/send-email", async (req, res) => {
   }
 });
 
+// 4b. Send Email via Gmail
+app.post("/api/send-email-gmail", async (req, res) => {
+  const { userId, leadId, subject, body, recipientEmail } = req.body;
+
+  if (!userId || !subject || !body || !recipientEmail) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const gmail = await getGmailClient(userId);
+
+    // Construct raw email
+    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    const messageParts = [
+      `To: ${recipientEmail}`,
+      'Content-Type: text/html; charset=utf-8',
+      'MIME-Version: 1.0',
+      `Subject: ${utf8Subject}`,
+      '',
+      body,
+    ];
+    const message = messageParts.join('\n');
+
+    // The body needs to be base64url encoded.
+    const encodedMessage = Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage,
+      },
+    });
+
+    // Track sent email
+    await supabase.from("sent_emails").insert({
+      user_id: userId,
+      lead_id: leadId,
+      subject,
+      body,
+      recipient_email: recipientEmail,
+      status: 'sent'
+    });
+
+    res.json({ success: true, message: "Email sent via Gmail!" });
+  } catch (error: any) {
+    console.error("Gmail Send Error:", error);
+    
+    // Track failed email
+    await supabase.from("sent_emails").insert({
+      user_id: userId,
+      lead_id: leadId,
+      subject,
+      body,
+      recipient_email: recipientEmail,
+      status: 'failed',
+      error_message: error.message
+    });
+
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4c. Google Auth Routes
+app.post("/api/auth/google/disconnect", async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  try {
+    const { error } = await supabase
+      .from("gmail_accounts")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) throw error;
+    res.json({ success: true, message: "Gmail disconnected" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/auth/google/url", (req, res) => {
+  const { state } = req.query;
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: GMAIL_SCOPES,
+    prompt: 'consent', // Force consent to ensure we get a refresh token
+    state: state as string,
+  });
+  res.json({ url });
+});
+
+app.get("/api/auth/google/callback", async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).send("Missing code");
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code as string);
+    oauth2Client.setCredentials(tokens);
+
+    // Get user's email
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const userInfo = await oauth2.userinfo.get();
+    const gmailEmail = userInfo.data.email;
+
+    // We need the userId to store this. 
+    // In a real app, we'd have a session or state.
+    // For this environment, we'll use a temporary state or ask the user to provide it.
+    // However, since we are in a popup, we can't easily get the userId from the parent without state.
+    // Let's assume the state parameter contains the userId.
+    const userId = req.query.state as string;
+
+    if (!userId || !gmailEmail || !tokens.access_token || !tokens.refresh_token || !tokens.expiry_date) {
+      throw new Error("Missing required token data");
+    }
+
+    // Store in DB
+    const { error } = await supabase
+      .from("gmail_accounts")
+      .upsert({
+        user_id: userId,
+        email: gmailEmail,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expiry_date: tokens.expiry_date,
+      }, { onConflict: 'user_id' });
+
+    if (error) throw error;
+
+    // Success response with postMessage script
+    res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'GMAIL_AUTH_SUCCESS', email: '${gmailEmail}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/dashboard';
+            }
+          </script>
+          <p>Gmail connected successfully! You can close this window.</p>
+        </body>
+      </html>
+    `);
+  } catch (error: any) {
+    console.error("Google Auth Callback Error:", error);
+    res.status(500).send("Authentication failed: " + error.message);
+  }
+});
+
 // 5. Create Checkout Session
 app.post("/api/create-checkout-session", async (req, res) => {
   const { userId, planId } = req.body;
@@ -417,6 +628,79 @@ app.post("/api/create-checkout-session", async (req, res) => {
     res.json({ url: session.url });
   } catch (error: any) {
     console.error("Stripe Checkout Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6. Cancel Subscription
+app.post("/api/cancel-subscription", async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  try {
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("subscription_id")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !user?.subscription_id) {
+      return res.status(404).json({ error: "No active subscription found" });
+    }
+
+    // Cancel at period end
+    await stripe.subscriptions.update(user.subscription_id, {
+      cancel_at_period_end: true,
+    });
+
+    // Update DB
+    await supabase
+      .from("users")
+      .update({ status: "canceled" })
+      .eq("id", userId);
+
+    res.json({ success: true, message: "Subscription will be canceled at the end of the period." });
+  } catch (error: any) {
+    console.error("Stripe Cancel Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 7. Delete Account
+app.post("/api/delete-account", async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  try {
+    // 1. Cancel Stripe subscription if exists
+    const { data: user } = await supabase
+      .from("users")
+      .select("subscription_id")
+      .eq("id", userId)
+      .single();
+
+    if (user?.subscription_id) {
+      try {
+        await stripe.subscriptions.cancel(user.subscription_id);
+      } catch (e) {
+        console.warn("Could not cancel stripe subscription during account deletion:", e);
+      }
+    }
+
+    // 2. Delete from Gmail accounts
+    await supabase.from("gmail_accounts").delete().eq("user_id", userId);
+
+    // 3. Delete from users table (cascading should handle other tables if set up, but let's be explicit if needed)
+    // Assuming cascading deletes are set up in Supabase for campaigns, leads, etc.
+    await supabase.from("users").delete().eq("id", userId);
+
+    // 4. Delete from Supabase Auth (requires service role key)
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    if (authError) throw authError;
+
+    res.json({ success: true, message: "Account deleted successfully" });
+  } catch (error: any) {
+    console.error("Delete Account Error:", error);
     res.status(500).json({ error: error.message });
   }
 });

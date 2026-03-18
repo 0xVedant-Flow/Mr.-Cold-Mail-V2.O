@@ -9,6 +9,14 @@ export const Login = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get('error');
+    if (urlError) {
+      setError(decodeURIComponent(urlError));
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -94,6 +102,25 @@ export const Login = () => {
               required
               className="w-full px-6 py-3.5 md:py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all text-sm md:text-base"
             />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email) {
+                    setError('Please enter your email address first.');
+                    return;
+                  }
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/login?error=Check your email for the password reset link.`,
+                  });
+                  if (error) setError(error.message);
+                  else setError('Password reset link sent to your email.');
+                }}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
           <button 
             type="submit"

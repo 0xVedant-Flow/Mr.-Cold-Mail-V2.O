@@ -36,9 +36,19 @@ export const Generator = () => {
     company: '',
     website: '',
     offer: '',
-    tone: 'Professional',
-    goal: 'Book a Meeting'
+    tone: user?.default_tone || 'Professional',
+    goal: user?.default_goal || 'Book a Meeting'
   });
+
+  React.useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        tone: user.default_tone || prev.tone,
+        goal: user.default_goal || prev.goal
+      }));
+    }
+  }, [user]);
 
   const fetchHistory = async () => {
     if (!user) return;

@@ -30,27 +30,19 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
-
-const data = [
-  { name: 'Mon', sent: 400, replies: 24 },
-  { name: 'Tue', sent: 300, replies: 18 },
-  { name: 'Wed', sent: 600, replies: 42 },
-  { name: 'Thu', sent: 800, replies: 56 },
-  { name: 'Fri', sent: 500, replies: 35 },
-  { name: 'Sat', sent: 200, replies: 12 },
-  { name: 'Sun', sent: 100, replies: 8 },
-];
-
-const stats = [
-  { label: 'Total Sent', value: '2,945', change: '+12.5%', trend: 'up', icon: Mail, color: 'text-blue-500' },
-  { label: 'Open Rate', value: '68.2%', change: '+4.3%', trend: 'up', icon: TrendingUp, color: 'text-emerald-500' },
-  { label: 'Reply Rate', value: '8.4%', change: '-1.2%', trend: 'down', icon: MessageSquare, color: 'text-purple-500' },
-  { label: 'Total Leads', value: '12,450', change: '+24.5%', trend: 'up', icon: Users, color: 'text-orange-500' },
-];
+import { useStore } from '../store/useStore';
 
 const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B'];
 
-const StatsCard = ({ label, value, change, trend, icon: Icon, color }: any) => (
+const StatsCard = ({ label, value, change, trend, icon: Icon, color }: {
+  label: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
+  icon: any;
+  color: string;
+  key?: any;
+}) => (
   <div className="glass p-8 rounded-[32px] border-border/40 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
     <div className={cn("absolute top-0 right-0 w-24 h-24 opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-150", color.replace('text', 'bg'))} />
     <div className="flex items-center justify-between mb-4">
@@ -71,6 +63,42 @@ const StatsCard = ({ label, value, change, trend, icon: Icon, color }: any) => (
 );
 
 export const Analytics = () => {
+  const { campaigns } = useStore();
+
+  const totalLeads = campaigns.reduce((acc, c) => acc + (c.leadsCount || 0), 0);
+  const totalSent = campaigns.reduce((acc, c) => acc + (c.leads?.filter(l => l.status === 'ready').length || 0), 0);
+  
+  // Mock rates for now as they aren't in the DB yet
+  const openRate = totalSent > 0 ? 64.2 : 0;
+  const replyRate = totalSent > 0 ? 8.4 : 0;
+
+  const stats: { label: string; value: string; change: string; trend: 'up' | 'down'; icon: any; color: string; }[] = [
+    { label: 'Total Sent', value: totalSent.toLocaleString(), change: '+12.5%', trend: 'up', icon: Mail, color: 'text-blue-500' },
+    { label: 'Open Rate', value: `${openRate}%`, change: '+4.3%', trend: 'up', icon: TrendingUp, color: 'text-emerald-500' },
+    { label: 'Reply Rate', value: `${replyRate}%`, change: '-1.2%', trend: 'down', icon: MessageSquare, color: 'text-purple-500' },
+    { label: 'Total Leads', value: totalLeads.toLocaleString(), change: '+24.5%', trend: 'up', icon: Users, color: 'text-orange-500' },
+  ];
+
+  // Generate chart data from campaigns
+  const chartData = campaigns.slice(0, 7).reverse().map(c => ({
+    name: c.name.split(' ')[0],
+    sent: c.leads?.filter(l => l.status === 'ready').length || 0,
+    replies: Math.floor((c.leads?.filter(l => l.status === 'ready').length || 0) * 0.08) // Mock replies
+  }));
+
+  // Fallback data if no campaigns exist
+  const fallbackData = [
+    { name: 'Mon', sent: 0, replies: 0 },
+    { name: 'Tue', sent: 0, replies: 0 },
+    { name: 'Wed', sent: 0, replies: 0 },
+    { name: 'Thu', sent: 0, replies: 0 },
+    { name: 'Fri', sent: 0, replies: 0 },
+    { name: 'Sat', sent: 0, replies: 0 },
+    { name: 'Sun', sent: 0, replies: 0 },
+  ];
+
+  const displayData = chartData.length > 0 ? chartData : fallbackData;
+
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Header */}
@@ -115,7 +143,7 @@ export const Analytics = () => {
           </div>
           <div className="h-[250px] md:h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
+              <AreaChart data={displayData}>
                 <defs>
                   <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
@@ -232,27 +260,37 @@ export const Analytics = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {[
-                { name: 'Q1 Outreach - Tech Founders', sent: 1200, opened: 840, replied: 120, rate: '10.0%' },
-                { name: 'LinkedIn Leads - Marketing', sent: 800, opened: 520, replied: 64, rate: '8.0%' },
-                { name: 'Direct Sales Pitch', sent: 450, opened: 310, replied: 45, rate: '10.0%' },
-                { name: 'Casual Follow-up', sent: 300, opened: 180, replied: 24, rate: '8.0%' },
-              ].map((campaign, i) => (
-                <tr key={i} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-5 md:px-8 py-4 font-bold text-sm md:text-base text-slate-800">{campaign.name}</td>
-                  <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{campaign.sent}</td>
-                  <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{campaign.opened}</td>
-                  <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{campaign.replied}</td>
-                  <td className="px-5 md:px-8 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-emerald-600 font-bold text-xs md:text-sm">{campaign.rate}</span>
-                      <div className="w-12 md:w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: campaign.rate }} />
-                      </div>
-                    </div>
+              {campaigns.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-8 py-12 text-center text-slate-500 font-medium">
+                    No campaigns found to analyze.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                campaigns.map((campaign, i) => {
+                  const sent = campaign.leads?.filter(l => l.status === 'ready').length || 0;
+                  const opened = Math.floor(sent * 0.68);
+                  const replied = Math.floor(sent * 0.08);
+                  const rate = sent > 0 ? ((replied / sent) * 100).toFixed(1) + '%' : '0%';
+
+                  return (
+                    <tr key={campaign.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-5 md:px-8 py-4 font-bold text-sm md:text-base text-slate-800">{campaign.name}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{sent}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{opened}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{replied}</td>
+                      <td className="px-5 md:px-8 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-600 font-bold text-xs md:text-sm">{rate}</span>
+                          <div className="w-12 md:w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: rate }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

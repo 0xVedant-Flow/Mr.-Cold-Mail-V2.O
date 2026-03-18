@@ -28,7 +28,6 @@ const sidebarItems = [
   { icon: Users, label: 'Leads', path: '/leads' },
   { icon: FileText, label: 'Templates', path: '/templates' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-  { icon: Users, label: 'Team', path: '/team' },
   { icon: CreditCard, label: 'Billing', path: '/billing' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
@@ -179,8 +178,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     {user?.subscription?.plan || 'Free'} Plan
                   </div>
                 </div>
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.full_name}`} alt="avatar" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0 group cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
+                  <img 
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.full_name || 'User'}`} 
+                    alt="avatar" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
                 </div>
               </div>
             </div>

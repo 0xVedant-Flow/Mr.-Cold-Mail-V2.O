@@ -110,13 +110,26 @@ export const EmailEditor = () => {
   );
 
   const [sending, setSending] = React.useState(false);
+  const [sendSuccess, setSendSuccess] = React.useState(false);
 
   const handleSend = async () => {
     if (!activeEmail || !user) return;
     setSending(true);
+    setSendSuccess(false);
     try {
-      await api.post('/send-email', { emailId: activeEmail.id, userId: user.id });
-      alert('Email sent successfully!');
+      if (user.gmailAccount?.connected) {
+        await api.post('/send-email-gmail', { 
+          userId: user.id,
+          leadId: activeLeadId,
+          subject: activeEmail.subject,
+          body: activeEmail.body,
+          recipientEmail: activeLead?.email
+        });
+      } else {
+        await api.post('/send-email', { emailId: activeEmail.id, userId: user.id });
+      }
+      setSendSuccess(true);
+      setTimeout(() => setSendSuccess(false), 3000);
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -301,10 +314,14 @@ export const EmailEditor = () => {
                 </button>
                 <button 
                   onClick={handleSend}
-                  disabled={!activeEmail || sending}
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/20 transition-all disabled:opacity-50"
+                  disabled={!activeEmail || sending || sendSuccess}
+                  className={cn(
+                    "w-full sm:w-auto px-10 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl transition-all disabled:opacity-50",
+                    sendSuccess ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
+                  )}
                 >
-                  {sending ? 'Sending...' : 'Send Email'} <Send size={20} />
+                  {sending ? 'Sending...' : sendSuccess ? 'Sent!' : user?.gmailAccount?.connected ? 'Send with Gmail' : 'Send Email'} 
+                  {sendSuccess ? <Check size={20} /> : <Send size={20} />}
                 </button>
               </div>
             </motion.div>

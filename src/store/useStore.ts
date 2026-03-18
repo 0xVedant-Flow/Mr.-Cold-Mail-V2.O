@@ -38,6 +38,12 @@ interface UserProfile {
     subscription_id?: string;
     current_period_end?: string;
   };
+  gmailAccount?: {
+    email: string;
+    connected: boolean;
+  };
+  default_tone?: string;
+  default_goal?: string;
 }
 
 interface AppState {
@@ -45,6 +51,7 @@ interface AppState {
   activeCampaignId: string | null;
   user: UserProfile | null;
   loading: boolean;
+  databaseError: string | null;
   fetchCampaigns: () => Promise<void>;
   fetchUser: () => Promise<void>;
   addCampaign: (campaign: Campaign) => void;
@@ -58,6 +65,7 @@ export const useStore = create<AppState>((set, get) => ({
   activeCampaignId: null,
   user: null,
   loading: true,
+  databaseError: null,
 
   fetchUser: async () => {
     try {
@@ -78,7 +86,22 @@ export const useStore = create<AppState>((set, get) => ({
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
+        if (profileError.message.includes("Could not find the table 'public.users'")) {
+          set({ databaseError: 'The "public.users" table is missing from your Supabase database.' });
+        } else {
+          console.error('Error fetching profile:', profileError);
+        }
+      }
+
+      // Fetch Gmail account
+      const { data: gmailAccount, error: gmailError } = await supabase
+        .from('gmail_accounts')
+        .select('email')
+        .eq('user_id', user.id)
+        .single();
+
+      if (gmailError && gmailError.code !== 'PGRST116') {
+        console.error('Error fetching gmail account:', gmailError);
       }
 
       set({
@@ -95,6 +118,12 @@ export const useStore = create<AppState>((set, get) => ({
             status: profile?.status || 'active',
             subscription_id: profile?.subscription_id,
           },
+          gmailAccount: gmailAccount ? {
+            email: gmailAccount.email,
+            connected: true
+          } : undefined,
+          default_tone: profile?.default_tone || 'Professional',
+          default_goal: profile?.default_goal || 'Book a Meeting',
         },
         loading: false,
       });

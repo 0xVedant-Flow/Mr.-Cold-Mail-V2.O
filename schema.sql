@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   credits INTEGER DEFAULT 10 NOT NULL,
   subscription_id TEXT,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'canceled')),
+  default_tone TEXT DEFAULT 'Professional',
+  default_goal TEXT DEFAULT 'Book a Meeting',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -73,6 +75,7 @@ ALTER TABLE public.emails ENABLE ROW LEVEL SECURITY;
 
 -- Policies
 CREATE POLICY "Users can view their own profile" ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update their own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can view their own subscription" ON public.subscriptions FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can view their own credits" ON public.credits FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own campaigns" ON public.campaigns FOR ALL USING (auth.uid() = user_id);
@@ -114,3 +117,37 @@ BEGIN
   WHERE id = user_id_param AND credits > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 12. Gmail Accounts Table
+CREATE TABLE IF NOT EXISTS public.gmail_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  email TEXT NOT NULL,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expiry_date BIGINT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE(user_id)
+);
+
+-- 13. Sent Emails Table (Optional Tracking)
+CREATE TABLE IF NOT EXISTS public.sent_emails (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  lead_id UUID REFERENCES public.leads(id) ON DELETE SET NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  recipient_email TEXT NOT NULL,
+  status TEXT DEFAULT 'sent', -- 'sent', 'failed'
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 14. Enable RLS
+ALTER TABLE public.gmail_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sent_emails ENABLE ROW LEVEL SECURITY;
+
+-- 15. Policies
+CREATE POLICY "Users can manage their own gmail accounts" ON public.gmail_accounts FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own sent emails" ON public.sent_emails FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own sent emails" ON public.sent_emails FOR INSERT WITH CHECK (auth.uid() = user_id);

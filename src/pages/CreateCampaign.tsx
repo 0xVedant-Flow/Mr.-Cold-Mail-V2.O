@@ -25,8 +25,15 @@ export const CreateCampaign = () => {
   const [step, setStep] = React.useState(1);
   const [name, setName] = React.useState('');
   const [offer, setOffer] = React.useState('');
-  const [tone, setTone] = React.useState('Professional');
-  const [goal, setGoal] = React.useState('Book a Meeting');
+  const [tone, setTone] = React.useState(user?.default_tone || 'Professional');
+  const [goal, setGoal] = React.useState(user?.default_goal || 'Book a Meeting');
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.default_tone) setTone(user.default_tone);
+      if (user.default_goal) setGoal(user.default_goal);
+    }
+  }, [user]);
   const [file, setFile] = React.useState<File | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
