@@ -10,23 +10,54 @@ export const Signup = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
+  const [success, setSuccess] = React.useState(false);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName }
+    setSuccess(false);
+
+    console.log('Attempting signup for:', email);
+
+    try {
+      const { data, error: signupError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (signupError) {
+        console.error('Signup error:', signupError);
+        throw signupError;
       }
-    });
-    if (error) setError(error.message);
-    else {
-      setError('Check your email for the confirmation link! You must confirm your email before you can log in.');
-      alert('Check your email for the confirmation link!');
+
+      console.log('Signup successful:', data);
+
+      if (data.user && data.session) {
+        // User is signed in immediately (if email confirmation is disabled)
+        console.log('User signed in immediately');
+        window.location.href = '/dashboard';
+      } else {
+        // User needs to confirm email
+        console.log('Email confirmation required');
+        setSuccess(true);
+      }
+    } catch (err: any) {
+      console.error('Signup catch block:', err);
+      if (err.message === 'Failed to fetch') {
+        setError('Connection error. Please check your internet or Supabase configuration.');
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -49,52 +80,71 @@ export const Signup = () => {
 
         <form onSubmit={handleSignup} className="space-y-6">
           {error && <div className="p-4 bg-destructive/10 text-destructive text-sm font-bold rounded-xl">{error}</div>}
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <User size={14} /> Full Name
-            </label>
-            <input 
-              type="text" 
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="John Doe"
-              required
-              className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <Mail size={14} /> Email Address
-            </label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@company.com"
-              required
-              className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <Lock size={14} /> Password
-            </label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
-            />
-          </div>
-          <button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? 'Creating Account...' : 'Get Started'} <Sparkles size={20} />
-          </button>
+          {success && (
+            <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                <Sparkles size={18} /> Check your email!
+              </div>
+              <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                We've sent a confirmation link to <span className="font-bold text-slate-800">{email}</span>. 
+                Please click the link to activate your account.
+              </p>
+              <div className="p-3 bg-primary/5 rounded-xl text-[10px] text-primary font-bold uppercase tracking-widest leading-normal">
+                Tip: Make sure you've added <span className="underline">{window.location.origin}</span> to your Supabase Redirect URLs in the dashboard.
+              </div>
+            </div>
+          )}
+          
+          {!success && (
+            <>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <User size={14} /> Full Name
+                </label>
+                <input 
+                  type="text" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                  className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Mail size={14} /> Email Address
+                </label>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  required
+                  className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Lock size={14} /> Password
+                </label>
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full px-6 py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all"
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading ? 'Creating Account...' : 'Get Started'} <Sparkles size={20} />
+              </button>
+            </>
+          )}
         </form>
 
         <div className="mt-8 text-center">

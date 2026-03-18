@@ -17,6 +17,7 @@ import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export const CreateCampaign = () => {
   const navigate = useNavigate();
@@ -67,23 +68,14 @@ export const CreateCampaign = () => {
         reader.readAsText(file);
       });
 
-      const response = await fetch('/api/upload-csv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          campaignId: campaign.id,
-          csvData,
-          offer,
-          tone,
-          goal
-        })
+      const response = await api.post('/upload-csv', {
+        userId: user?.id,
+        campaignId: campaign.id,
+        csvData,
+        offer,
+        tone,
+        goal
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to upload leads');
-      }
 
       // 3. Start email generation in background (handled by server after upload)
       navigate(`/campaigns/${campaign.id}`);

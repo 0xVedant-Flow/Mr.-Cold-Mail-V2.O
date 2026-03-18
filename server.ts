@@ -85,9 +85,28 @@ const checkCredits = async (req: any, res: any, next: any) => {
   next();
 };
 
+const generateEmailSchema = z.object({
+  userId: z.string().uuid(),
+  lead: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    company: z.string().optional(),
+    website: z.string().optional(),
+  }),
+  campaignId: z.string().uuid(),
+  offer: z.string().min(10),
+  tone: z.string().default('Professional'),
+  goal: z.string().default('Book a Meeting'),
+});
+
 // 2. Generate Email
 app.post("/api/generate-email", checkCredits, async (req, res) => {
-  const { userId, lead, campaignId, offer, tone, goal } = req.body;
+  const validation = generateEmailSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
+  }
+
+  const { userId, lead, campaignId, offer, tone, goal } = validation.data;
 
   try {
     const prompt = `Write a highly personalized cold email.
@@ -140,9 +159,20 @@ Rules:
   }
 });
 
+const uploadCsvSchema = z.object({
+  userId: z.string().uuid(),
+  campaignId: z.string().uuid(),
+  csvData: z.string().min(1),
+});
+
 // 3. Upload CSV
 app.post("/api/upload-csv", async (req, res) => {
-  const { userId, campaignId, csvData } = req.body;
+  const validation = uploadCsvSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
+  }
+
+  const { userId, campaignId, csvData } = validation.data;
 
   try {
     const results = Papa.parse(csvData, { header: true });
@@ -165,15 +195,38 @@ app.post("/api/upload-csv", async (req, res) => {
   }
 });
 
-// 4. Stripe Checkout
+// 4. Send Email (Simulated)
+app.post("/api/send-email", async (req, res) => {
+  const { emailId, userId } = req.body;
+  if (!emailId || !userId) return res.status(400).json({ error: "Missing emailId or userId" });
+
+  try {
+    // In a real app, you'd use Resend, SendGrid, etc. here.
+    // For this demo, we'll just mark it as sent in the DB if we had a status field.
+    // Since we don't have a status field in the emails table, we'll just return success.
+    
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    res.json({ success: true, message: "Email sent successfully!" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. Stripe Checkout
 app.post("/api/stripe/checkout", async (req, res) => {
   const { userId, plan } = req.body;
 
   const priceIds: Record<string, string> = {
-    starter: process.env.STRIPE_STARTER_PRICE_ID!,
-    pro: process.env.STRIPE_PRO_PRICE_ID!,
-    agency: process.env.STRIPE_AGENCY_PRICE_ID!,
+    starter: process.env.STRIPE_STARTER_PRICE_ID || 'price_placeholder_starter',
+    pro: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder_pro',
+    agency: process.env.STRIPE_AGENCY_PRICE_ID || 'price_placeholder_agency',
   };
+
+  if (priceIds[plan].includes('placeholder')) {
+    return res.status(400).json({ error: "Stripe Price ID not configured for this plan." });
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -258,10 +311,22 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
   }
+
+  // SPA fallback
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    
+    if (process.env.NODE_ENV === "production") {
+      const distPath = path.join(process.cwd(), "dist");
+      res.sendFile(path.join(distPath, "index.html"));
+    } else {
+      // In development, Vite's middlewareMode handles SPA fallback automatically
+      // if it's reached this point, it means Vite didn't handle it, 
+      // which usually shouldn't happen for SPA routes.
+      next();
+    }
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

@@ -22,11 +22,12 @@ import {
 import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export const EmailEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { campaigns } = useStore();
+  const { campaigns, user } = useStore();
   const [activeLeadId, setActiveLeadId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [campaign, setCampaign] = React.useState<any>(null);
@@ -96,6 +97,21 @@ export const EmailEditor = () => {
     l.name.toLowerCase().includes(search.toLowerCase()) || 
     l.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const [sending, setSending] = React.useState(false);
+
+  const handleSend = async () => {
+    if (!activeEmail || !user) return;
+    setSending(true);
+    try {
+      await api.post('/send-email', { emailId: activeEmail.id, userId: user.id });
+      alert('Email sent successfully!');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleCopy = () => {
     if (activeEmail) {
@@ -260,10 +276,11 @@ export const EmailEditor = () => {
                   </button>
                 </div>
                 <button 
-                  disabled={!activeEmail}
+                  onClick={handleSend}
+                  disabled={!activeEmail || sending}
                   className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-2 shadow-xl shadow-primary/20 transition-all disabled:opacity-50"
                 >
-                  Send Email <Send size={20} />
+                  {sending ? 'Sending...' : 'Send Email'} <Send size={20} />
                 </button>
               </div>
             </motion.div>

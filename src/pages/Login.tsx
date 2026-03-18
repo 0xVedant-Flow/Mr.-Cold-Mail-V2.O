@@ -13,9 +13,34 @@ export const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-    setLoading(false);
+
+    console.log('Attempting login for:', email);
+
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (loginError) {
+        console.error('Login error:', loginError);
+        if (loginError.message.includes('Email not confirmed')) {
+          setError('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
+        } else {
+          throw loginError;
+        }
+        return;
+      }
+
+      console.log('Login successful:', data);
+      // App.tsx onAuthStateChange will handle redirection
+    } catch (err: any) {
+      console.error('Login catch block:', err);
+      if (err.message === 'Failed to fetch') {
+        setError('Connection error. Please check your internet or Supabase configuration.');
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

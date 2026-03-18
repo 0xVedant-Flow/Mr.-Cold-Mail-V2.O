@@ -15,72 +15,55 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
-
-const plans = [
-  {
-    name: 'Starter',
-    price: '$19',
-    credits: '500',
-    features: [
-      '500 AI Personalizations / mo',
-      'Unlimited Campaigns',
-      'CSV Lead Import',
-      'Standard Support',
-      'Basic Analytics'
-    ],
-    color: 'bg-slate-800',
-    priceId: 'price_starter_id'
-  },
-  {
-    name: 'Pro',
-    price: '$29',
-    credits: '2,000',
-    features: [
-      '2,000 AI Personalizations / mo',
-      'Priority AI Generation',
-      'Advanced Personalization',
-      'Priority Support',
-      'Detailed Analytics'
-    ],
-    color: 'bg-primary',
-    popular: true,
-    priceId: 'price_pro_id'
-  },
-  {
-    name: 'Agency',
-    price: '$69',
-    credits: 'Unlimited',
-    features: [
-      'Unlimited Personalizations',
-      'Team Collaboration (5 seats)',
-      'White-label Reports',
-      'Dedicated Account Manager',
-      'Custom AI Training'
-    ],
-    color: 'bg-purple-600',
-    priceId: 'price_agency_id'
-  }
-];
+import { api } from '../lib/api';
 
 export const Billing = () => {
   const { user } = useStore();
   const [loading, setLoading] = React.useState<string | null>(null);
+  const [isYearly, setIsYearly] = React.useState(true);
+
+  const plans = [
+    {
+      name: 'Pro',
+      price: isYearly ? '$17' : '$29',
+      credits: '2,000',
+      features: [
+        '2,000 AI Personalizations / mo',
+        'Priority AI Generation',
+        'Advanced Personalization',
+        'Priority Support',
+        'Detailed Analytics'
+      ],
+      color: 'bg-primary',
+      popular: true,
+      priceId: isYearly ? 'price_pro_yearly_id' : 'price_pro_monthly_id'
+    },
+    {
+      name: 'Agency',
+      price: isYearly ? '$41' : '$69',
+      credits: 'Unlimited',
+      features: [
+        'Unlimited Personalizations',
+        'Team Collaboration (5 seats)',
+        'White-label Reports',
+        'Dedicated Account Manager',
+        'Custom AI Training'
+      ],
+      color: 'bg-purple-600',
+      priceId: isYearly ? 'price_agency_yearly_id' : 'price_agency_monthly_id'
+    }
+  ];
 
   const handleUpgrade = async (planName: string, priceId: string) => {
     setLoading(priceId);
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: user?.id,
-          plan: planName.toLowerCase(),
-          priceId 
-        })
+      const data = await api.post('/stripe/checkout', { 
+        userId: user?.id,
+        plan: planName.toLowerCase(),
+        priceId 
       });
       
-      const { url } = await response.json();
-      if (url) window.location.href = url;
+      if (data.url) window.location.href = data.url;
     } catch (err) {
       console.error('Checkout error:', err);
     } finally {
@@ -91,9 +74,23 @@ export const Billing = () => {
   return (
     <div className="space-y-12">
       {/* Header */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
+      <div className="text-center space-y-6 max-w-2xl mx-auto">
         <h2 className="text-4xl font-bold text-slate-800 tracking-tight">Simple, Transparent Pricing</h2>
-        <p className="text-slate-500 font-medium text-lg">Choose the plan that's right for your business growth.</p>
+        <div className="flex items-center justify-center gap-4">
+          <span className={cn("text-sm font-bold", !isYearly ? "text-slate-900" : "text-slate-400")}>Monthly</span>
+          <button 
+            onClick={() => setIsYearly(!isYearly)}
+            className="w-14 h-8 bg-slate-200 rounded-full p-1 transition-all relative"
+          >
+            <div className={cn(
+              "w-6 h-6 bg-primary rounded-full transition-all shadow-sm",
+              isYearly ? "translate-x-6" : "translate-x-0"
+            )} />
+          </button>
+          <span className={cn("text-sm font-bold flex items-center gap-2", isYearly ? "text-slate-900" : "text-slate-400")}>
+            Yearly <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full">SAVE BIG</span>
+          </span>
+        </div>
       </div>
 
       {/* Current Plan Card */}
@@ -124,7 +121,7 @@ export const Billing = () => {
       </div>
 
       {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan, i) => (
           <motion.div
             key={plan.name}

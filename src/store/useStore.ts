@@ -67,6 +67,8 @@ export const useStore = create<AppState>((set, get) => ({
         return;
       }
 
+      console.log('Fetching profile for user:', user.id);
+
       // Fetch profile, credits, and subscription in parallel
       const [profileRes, creditsRes, subRes] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).single(),
@@ -76,6 +78,10 @@ export const useStore = create<AppState>((set, get) => ({
 
       if (profileRes.error && profileRes.error.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileRes.error);
+      }
+
+      if (creditsRes.error && creditsRes.error.code !== 'PGRST116') {
+        console.error('Error fetching credits:', creditsRes.error);
       }
 
       set({
@@ -90,7 +96,7 @@ export const useStore = create<AppState>((set, get) => ({
       });
     } catch (error) {
       console.error('fetchUser error:', error);
-      set({ loading: false });
+      set({ user: null, loading: false });
     }
   },
 
