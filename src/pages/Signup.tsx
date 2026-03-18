@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Mail, Sparkles, Lock, User } from 'lucide-react';
+import { Mail, Sparkles, Lock, User, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { Link } from 'react-router-dom';
 
 export const Signup = () => {
   const [email, setEmail] = React.useState('');
@@ -25,8 +26,6 @@ export const Signup = () => {
     setError('');
     setSuccess(false);
 
-    console.log('Attempting signup for:', email);
-
     if (!isSupabaseConfigured) {
       setError('Supabase credentials are not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the Secrets panel.');
       setLoading(false);
@@ -45,127 +44,209 @@ export const Signup = () => {
         },
       });
 
-      if (signupError) {
-        console.error('Signup error:', signupError);
-        throw signupError;
-      }
-
-      console.log('Signup successful:', data);
+      if (signupError) throw signupError;
 
       if (data.user && data.session) {
-        // User is signed in immediately (if email confirmation is disabled)
-        console.log('User signed in immediately');
         window.location.href = '/dashboard';
       } else {
-        // User needs to confirm email
-        console.log('Email confirmation required');
         setSuccess(true);
       }
     } catch (err: any) {
-      console.error('Signup catch block:', err);
-      if (err.message === 'Failed to fetch') {
-        setError('Connection error. Please check your internet or Supabase configuration.');
-      } else {
-        setError(err.message);
-      }
+      setError(err.message === 'Failed to fetch' ? 'Connection error. Please check your internet or Supabase configuration.' : err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
-      
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-border/40 shadow-2xl shadow-primary/5 relative z-10"
-      >
-        <div className="text-center mb-8 md:mb-12">
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-4 md:mb-6">
-            <span className="text-white text-2xl md:text-3xl font-bold">❄</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Create Account</h2>
-          <p className="text-slate-500 text-sm md:text-base font-medium mt-2">Start your 14-day free trial today</p>
-        </div>
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+      {/* Background Atmosphere */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+            x: [0, 50, 0],
+            y: [0, -50, 0]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px]" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            opacity: [0.2, 0.4, 0.2],
+            x: [0, -50, 0],
+            y: [0, 50, 0]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 rounded-full blur-[120px]" 
+        />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      </div>
 
-        <form onSubmit={handleSignup} className="space-y-4 md:space-y-6">
-          {error && <div className="p-4 bg-destructive/10 text-destructive text-xs md:text-sm font-bold rounded-xl">{error}</div>}
-          {success && (
-            <div className="p-5 md:p-6 bg-emerald-50 border border-emerald-100 rounded-2xl space-y-3">
-              <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm md:text-base">
-                <Sparkles size={18} /> Check your email!
-              </div>
-              <p className="text-xs md:text-sm text-slate-600 font-medium leading-relaxed">
-                We've sent a confirmation link to <span className="font-bold text-slate-800">{email}</span>. 
-                Please click the link to activate your account.
-              </p>
-              <div className="p-3 bg-primary/5 rounded-xl text-[9px] md:text-[10px] text-primary font-bold uppercase tracking-widest leading-normal">
-                Tip: Make sure you've added <span className="underline">{window.location.origin}</span> to your Supabase Redirect URLs in the dashboard.
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+        {/* Storytelling Side */}
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="hidden lg:block space-y-8"
+        >
+          <div className="space-y-4">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-12 h-12 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center text-primary mb-6"
+            >
+              <Sparkles size={24} />
+            </motion.div>
+            <h1 className="text-5xl font-bold text-white leading-tight tracking-tight">
+              The Future of <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-emerald-400">Cold Outreach</span> is Here.
+            </h1>
+            <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+              Join 5,000+ top-performing sales teams who use Mr. Cold Mail to turn cold leads into warm conversations.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {[
+              { title: "AI-Powered Personalization", desc: "Our AI researches every lead to write emails that actually get replies." },
+              { title: "10x Faster Workflow", desc: "Generate a week's worth of high-quality outreach in under 5 minutes." },
+              { title: "High-Conversion Templates", desc: "Access the same frameworks used by world-class sales agencies." }
+            ].map((item, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className="flex gap-4 items-start"
+              >
+                <div className="mt-1 bg-emerald-500/10 p-1 rounded-full text-emerald-400">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">{item.title}</h3>
+                  <p className="text-slate-500 text-sm">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="pt-8 border-t border-white/5">
+            <p className="text-slate-500 text-sm italic">"Mr. Cold Mail doubled our meeting rate in the first month. It's a game changer."</p>
+            <div className="flex items-center gap-3 mt-4">
+              <img src="https://i.pravatar.cc/150?u=sarah" alt="User" className="w-10 h-10 rounded-full border border-white/10" />
+              <div>
+                <p className="text-white text-sm font-bold">Sarah Jenkins</p>
+                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold">Head of Sales, TechFlow</p>
               </div>
             </div>
-          )}
-          
-          {!success && (
-            <>
-              <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <User size={14} /> Full Name
-                </label>
-                <input 
-                  type="text" 
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="John Doe"
-                  required
-                  className="w-full px-6 py-3.5 md:py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all text-sm md:text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Mail size={14} /> Email Address
-                </label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  required
-                  className="w-full px-6 py-3.5 md:py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all text-sm md:text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Lock size={14} /> Password
-                </label>
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full px-6 py-3.5 md:py-4 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all text-sm md:text-base"
-                />
-              </div>
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary hover:bg-primary/90 text-white py-4 md:py-5 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm md:text-base"
-              >
-                {loading ? 'Creating Account...' : 'Get Started'} <Sparkles size={20} />
-              </button>
-            </>
-          )}
-        </form>
+          </div>
+        </motion.div>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-slate-500 font-medium">
-            Already have an account? <a href="/login" className="text-primary font-bold hover:underline">Log In</a>
-          </p>
-        </div>
-      </motion.div>
+        {/* Form Side */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, rotateY: -5 }}
+          whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+          viewport={{ once: true }}
+          style={{ perspective: 1000 }}
+          className="w-full max-w-md mx-auto"
+        >
+          <div className="glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-white/10 shadow-2xl bg-white/5 backdrop-blur-xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="text-center mb-8 relative z-10">
+              <div className="lg:hidden w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-4">
+                <span className="text-white text-xl font-bold">❄</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Create Account</h2>
+              <p className="text-slate-400 text-sm font-medium mt-2">Start your 14-day free trial today</p>
+            </div>
+
+            <form onSubmit={handleSignup} className="space-y-4 md:space-y-6 relative z-10">
+              {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs md:text-sm font-bold rounded-xl">{error}</div>}
+              {success && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-3"
+                >
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                    <Sparkles size={18} /> Check your email!
+                  </div>
+                  <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed">
+                    We've sent a confirmation link to <span className="font-bold text-white">{email}</span>. 
+                  </p>
+                  <div className="p-3 bg-primary/10 rounded-xl text-[10px] text-primary font-bold uppercase tracking-widest">
+                    Tip: Check your spam folder if it doesn't arrive in 2 minutes.
+                  </div>
+                </motion.div>
+              )}
+              
+              {!success && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 ml-1">
+                      <User size={12} /> Full Name
+                    </label>
+                    <input 
+                      type="text" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 ml-1">
+                      <Mail size={12} /> Email Address
+                    </label>
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      required
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 ml-1">
+                      <Lock size={12} /> Password
+                    </label>
+                    <input 
+                      type="password" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                    />
+                  </div>
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-base"
+                  >
+                    {loading ? 'Creating Account...' : 'Get Started Free'} <ArrowRight size={20} />
+                  </motion.button>
+                </>
+              )}
+            </form>
+
+            <div className="mt-8 text-center relative z-10">
+              <p className="text-sm text-slate-500 font-medium">
+                Already have an account? <Link to="/login" className="text-primary font-bold hover:text-primary/80 transition-colors">Log In</Link>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
