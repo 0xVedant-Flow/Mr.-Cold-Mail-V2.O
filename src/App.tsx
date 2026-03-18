@@ -14,6 +14,8 @@ import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { Billing } from './pages/Billing';
 import { Team } from './pages/Team';
+import { Generator } from './pages/Generator';
+import { Leads } from './pages/Leads';
 import { supabase } from './lib/supabase';
 import { useStore } from './store/useStore';
 import { FullPageLoading } from './components/LoadingSpinner';
@@ -87,6 +89,8 @@ export default function App() {
         <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
         <Route path="/team" element={<ProtectedRoute><Layout><Team /></Layout></ProtectedRoute>} />
         <Route path="/billing" element={<ProtectedRoute><Layout><Billing /></Layout></ProtectedRoute>} />
+        <Route path="/generator" element={<ProtectedRoute><Layout><Generator /></Layout></ProtectedRoute>} />
+        <Route path="/leads" element={<ProtectedRoute><Layout><Leads /></Layout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
 
         {/* Fallback */}

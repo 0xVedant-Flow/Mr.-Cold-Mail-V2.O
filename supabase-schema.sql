@@ -122,6 +122,25 @@ BEGIN;
   ALTER PUBLICATION supabase_realtime ADD TABLE emails;
 COMMIT;
 
+-- Create generated_emails table for the standalone generator
+CREATE TABLE IF NOT EXISTS generated_emails (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  lead_name TEXT NOT NULL,
+  company TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  email_body TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS for generated_emails
+ALTER TABLE generated_emails ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for generated_emails
+CREATE POLICY "Users can view their own generated emails" ON generated_emails FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own generated emails" ON generated_emails FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own generated emails" ON generated_emails FOR DELETE USING (auth.uid() = user_id);
+
 -- Trigger to create user profile and credits on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$

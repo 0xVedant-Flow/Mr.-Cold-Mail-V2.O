@@ -26,9 +26,9 @@ export const Billing = () => {
     {
       name: 'Pro',
       price: isYearly ? '$17' : '$29',
-      credits: '2,000',
+      credits: '1,000',
       features: [
-        '2,000 AI Personalizations / mo',
+        '1,000 AI Personalizations / mo',
         'Priority AI Generation',
         'Advanced Personalization',
         'Priority Support',
@@ -36,31 +36,30 @@ export const Billing = () => {
       ],
       color: 'bg-primary',
       popular: true,
-      priceId: isYearly ? 'price_pro_yearly_id' : 'price_pro_monthly_id'
+      planId: isYearly ? 'pro_yearly' : 'pro_monthly'
     },
     {
       name: 'Agency',
       price: isYearly ? '$41' : '$69',
-      credits: 'Unlimited',
+      credits: '5,000',
       features: [
-        'Unlimited Personalizations',
+        '5,000 AI Personalizations / mo',
         'Team Collaboration (5 seats)',
         'White-label Reports',
         'Dedicated Account Manager',
         'Custom AI Training'
       ],
       color: 'bg-purple-600',
-      priceId: isYearly ? 'price_agency_yearly_id' : 'price_agency_monthly_id'
+      planId: isYearly ? 'agency_yearly' : 'agency_monthly'
     }
   ];
 
-  const handleUpgrade = async (planName: string, priceId: string) => {
-    setLoading(priceId);
+  const handleUpgrade = async (planName: string, planId: string) => {
+    setLoading(planId);
     try {
-      const data = await api.post('/stripe/checkout', { 
+      const data = await api.post('/create-checkout-session', { 
         userId: user?.id,
-        plan: planName.toLowerCase(),
-        priceId 
+        planId 
       });
       
       if (data.url) window.location.href = data.url;
@@ -72,10 +71,10 @@ export const Billing = () => {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 md:space-y-12">
       {/* Header */}
-      <div className="text-center space-y-6 max-w-2xl mx-auto">
-        <h2 className="text-4xl font-bold text-slate-800 tracking-tight">Simple, Transparent Pricing</h2>
+      <div className="text-center space-y-4 md:space-y-6 max-w-2xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">Simple, Transparent Pricing</h2>
         <div className="flex items-center justify-center gap-4">
           <span className={cn("text-sm font-bold", !isYearly ? "text-slate-900" : "text-slate-400")}>Monthly</span>
           <button 
@@ -94,27 +93,30 @@ export const Billing = () => {
       </div>
 
       {/* Current Plan Card */}
-      <div className="glass p-8 rounded-[40px] border-primary/20 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+      <div className="glass p-6 md:p-8 rounded-[40px] border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         
-        <div className="flex items-center gap-6 relative z-10">
-          <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-primary/20">
-            <Zap size={40} fill="currentColor" />
+        <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 relative z-10 text-center sm:text-left">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-primary/20 shrink-0">
+            <Zap size={32} className="md:w-10 md:h-10" fill="currentColor" />
           </div>
           <div>
-            <div className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Current Plan</div>
-            <h3 className="text-3xl font-bold text-slate-800">{user?.subscription?.plan || 'Free Tier'}</h3>
-            <p className="text-slate-500 font-medium">Your plan will renew on {user?.subscription?.current_period_end ? new Date(user.subscription.current_period_end).toLocaleDateString() : 'N/A'}</p>
+            <div className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-widest mb-1">Current Plan</div>
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-800">{user?.subscription?.plan || 'Free Tier'}</h3>
+            <p className="text-sm md:text-base text-slate-500 font-medium">Your plan will renew on {user?.subscription?.current_period_end ? new Date(user.subscription.current_period_end).toLocaleDateString() : 'N/A'}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-12 relative z-10">
+        <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-12 relative z-10 w-full md:w-auto">
           <div className="text-center">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Credits Used</div>
-            <div className="text-2xl font-bold text-slate-800">{user?.credits?.used_credits || 0} / {user?.credits?.total_credits || 10}</div>
+            <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Credits Remaining</div>
+            <div className="text-xl md:text-2xl font-bold text-slate-800">{user?.credits?.total_credits || 0}</div>
           </div>
           <div className="h-12 w-px bg-border/60 hidden md:block" />
-          <button className="px-8 py-4 glass rounded-2xl font-bold text-slate-600 hover:bg-white transition-all">
+          <button 
+            onClick={() => window.open('https://billing.stripe.com/p/login/test_6oE7v95f4g5f', '_blank')}
+            className="w-full sm:w-auto px-8 py-4 glass rounded-2xl font-bold text-slate-600 hover:bg-white transition-all"
+          >
             Manage Subscription
           </button>
         </div>
@@ -129,8 +131,8 @@ export const Billing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             className={cn(
-              "glass p-10 rounded-[48px] border-border/40 relative flex flex-col",
-              plan.popular && "border-primary/40 shadow-2xl shadow-primary/5 scale-105 z-10"
+              "glass p-8 md:p-10 rounded-[48px] border-border/40 relative flex flex-col",
+              plan.popular && "border-primary/40 shadow-2xl shadow-primary/5 md:scale-105 z-10"
             )}
           >
             {plan.popular && (
@@ -139,15 +141,15 @@ export const Billing = () => {
               </div>
             )}
 
-            <div className="mb-8">
-              <h4 className="text-xl font-bold text-slate-800 mb-2">{plan.name}</h4>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-slate-800">{plan.price}</span>
+            <div className="mb-6 md:mb-8 text-center md:text-left">
+              <h4 className="text-lg md:text-xl font-bold text-slate-800 mb-2">{plan.name}</h4>
+              <div className="flex items-baseline justify-center md:justify-start gap-1">
+                <span className="text-3xl md:text-4xl font-bold text-slate-800">{plan.price}</span>
                 <span className="text-slate-500 font-medium">/mo</span>
               </div>
             </div>
 
-            <div className="space-y-4 mb-10 flex-1">
+            <div className="space-y-4 mb-8 md:mb-10 flex-1">
               {plan.features.map((feature, j) => (
                 <div key={j} className="flex items-start gap-3 text-sm font-medium text-slate-600">
                   <CheckCircle2 size={18} className="text-emerald-500 mt-0.5 shrink-0" />
@@ -157,23 +159,23 @@ export const Billing = () => {
             </div>
 
             <button 
-              onClick={() => handleUpgrade(plan.name, plan.priceId)}
+              onClick={() => handleUpgrade(plan.name, plan.planId)}
               disabled={loading !== null || user?.subscription?.plan?.toLowerCase() === plan.name.toLowerCase()}
               className={cn(
-                "w-full py-5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-xl",
+                "w-full py-4 md:py-5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-xl",
                 plan.popular ? "bg-primary text-white shadow-primary/20 hover:bg-primary/90" : "bg-slate-800 text-white shadow-slate-200 hover:bg-slate-900",
                 user?.subscription?.plan?.toLowerCase() === plan.name.toLowerCase() && "opacity-50 cursor-not-allowed"
               )}
             >
-              {loading === plan.priceId ? 'Processing...' : user?.subscription?.plan?.toLowerCase() === plan.name.toLowerCase() ? 'Current Plan' : 'Upgrade Now'} 
-              {loading !== plan.priceId && <ArrowRight size={20} />}
+              {loading === plan.planId ? 'Processing...' : user?.subscription?.plan?.toLowerCase() === plan.name.toLowerCase() ? 'Current Plan' : 'Upgrade Now'} 
+              {loading !== plan.planId && <ArrowRight size={20} />}
             </button>
           </motion.div>
         ))}
       </div>
 
       {/* FAQ / Security */}
-      <div className="grid md:grid-cols-3 gap-8 pt-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 md:pt-12">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 shrink-0">
             <ShieldCheck size={24} />

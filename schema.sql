@@ -5,10 +5,14 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
+  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'agency')),
+  credits INTEGER DEFAULT 10 NOT NULL,
+  subscription_id TEXT,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'canceled')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Subscriptions table
+-- 2. Subscriptions table (Keeping for detailed tracking if needed, but primary info is in users)
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -20,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Credits table (Free system)
+-- 3. Credits table (Keeping for detailed tracking if needed)
 CREATE TABLE IF NOT EXISTS public.credits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
@@ -86,8 +90,8 @@ CREATE POLICY "Users can manage emails for their leads" ON public.emails FOR ALL
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.users (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
+  INSERT INTO public.users (id, email, full_name, plan, credits, status)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'free', 10, 'active');
 
   INSERT INTO public.credits (user_id, total_credits, used_credits)
   VALUES (new.id, 10, 0);
@@ -100,13 +104,12 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- RPC to increment used credits
-CREATE OR REPLACE FUNCTION public.increment_used_credits(user_id_param UUID)
+-- RPC to deduct credits from users table
+CREATE OR REPLACE FUNCTION public.deduct_user_credits(user_id_param UUID)
 RETURNS void AS $$
 BEGIN
-  UPDATE public.credits
-  SET used_credits = used_credits + 1,
-      updated_at = now()
-  WHERE user_id = user_id_param;
+  UPDATE public.users
+  SET credits = credits - 1
+  WHERE id = user_id_param AND credits > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

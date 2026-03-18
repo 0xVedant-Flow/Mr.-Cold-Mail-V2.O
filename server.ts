@@ -46,6 +46,103 @@ const stripe = new Stripe(stripeSecret || "sk_test_placeholder", {
 
 // Middleware
 app.use(cors());
+
+// Webhook needs raw body - must be before express.json()
+app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"] as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not set");
+    return res.status(400).send("Webhook Secret missing");
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err: any) {
+    console.error(`Webhook Error: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  const session = event.data.object as any;
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "invoice.payment_succeeded": {
+        const userId = session.metadata?.userId;
+        const plan = session.metadata?.plan;
+        const subscriptionId = session.subscription;
+
+        if (userId && plan) {
+          // Determine credits based on plan
+          let credits = 10;
+          if (plan.includes('pro')) credits = 1000;
+          if (plan.includes('agency')) credits = 5000;
+
+          // Update users table
+          const { error } = await supabase
+            .from("users")
+            .update({
+              plan: plan.split('_')[0], // pro or agency
+              credits: credits,
+              subscription_id: subscriptionId,
+              status: "active"
+            })
+            .eq("id", userId);
+
+          if (error) console.error("Error updating user after payment:", error);
+          
+          // Also update subscriptions table for tracking
+          await supabase.from("subscriptions").upsert({
+            user_id: userId,
+            plan: plan.split('_')[0],
+            status: "active",
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: session.customer,
+          });
+        }
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscriptionId = session.id;
+        const status = session.status === 'active' ? 'active' : 'canceled';
+        
+        await supabase
+          .from("users")
+          .update({ status })
+          .eq("subscription_id", subscriptionId);
+          
+        await supabase
+          .from("subscriptions")
+          .update({ status })
+          .eq("stripe_subscription_id", subscriptionId);
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscriptionId = session.id;
+        await supabase
+          .from("users")
+          .update({ status: "canceled", plan: "free" })
+          .eq("subscription_id", subscriptionId);
+          
+        await supabase
+          .from("subscriptions")
+          .update({ status: "canceled" })
+          .eq("stripe_subscription_id", subscriptionId);
+        break;
+      }
+    }
+  } catch (error) {
+    console.error("Error processing webhook event:", error);
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json({ limit: "50mb" }));
 
 // --- API Routes ---
@@ -58,28 +155,20 @@ const checkCredits = async (req: any, res: any, next: any) => {
   const { userId } = req.body;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const { data: credits, error } = await supabase
-    .from("credits")
-    .select("*")
-    .eq("user_id", userId)
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("credits, plan, status")
+    .eq("id", userId)
     .single();
 
-  if (error || !credits) return res.status(404).json({ error: "Credits not found" });
+  if (error || !user) return res.status(404).json({ error: "User not found" });
 
-  // Check subscription for unlimited
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .single();
-
-  if (sub?.plan === "agency") {
+  if (user.plan === "agency" && user.status === "active") {
     return next();
   }
 
-  if (credits.used_credits >= credits.total_credits) {
-    return res.status(403).json({ error: "You’ve reached your free limit. Upgrade to continue." });
+  if (user.credits <= 0) {
+    return res.status(403).json({ error: "You’ve reached your credit limit. Upgrade to continue." });
   }
 
   next();
@@ -87,13 +176,9 @@ const checkCredits = async (req: any, res: any, next: any) => {
 
 const generateEmailSchema = z.object({
   userId: z.string().uuid(),
-  lead: z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    company: z.string().optional(),
-    website: z.string().optional(),
-  }),
-  campaignId: z.string().uuid(),
+  leadName: z.string().min(1),
+  company: z.string().min(1),
+  website: z.string().optional(),
   offer: z.string().min(10),
   tone: z.string().default('Professional'),
   goal: z.string().default('Book a Meeting'),
@@ -106,53 +191,71 @@ app.post("/api/generate-email", checkCredits, async (req, res) => {
     return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
   }
 
-  const { userId, lead, campaignId, offer, tone, goal } = validation.data;
+  const { userId, leadName, company, website, offer, tone, goal } = validation.data;
 
   try {
-    const prompt = `Write a highly personalized cold email.
+    const prompt = `You are a world-class cold email copywriter. Write 3 highly personalized, human-like cold email variations for the following:
 
-Lead Name: ${lead.name}
-Company: ${lead.company}
-Website: ${lead.website}
+Lead Name: ${leadName}
+Company: ${company}
+Website: ${website || "N/A"}
 
 User Offer: ${offer}
 Tone: ${tone}
 Goal: ${goal}
 
-Rules:
-- Short (100-150 words)
-- Personalized intro
-- Clear CTA
-- Natural human tone`;
+RULES:
+- Max 120 words per email.
+- No generic lines like "I hope you're doing well".
+- No buzzwords.
+- Personalized intro based on company/insight.
+- Soft CTA at the end.
+- Return 3 variations.
+- For EACH variation, also provide a unique subject line.
+
+Return the response as a JSON object with this structure:
+{
+  "variations": [
+    { "subject": "...", "body": "..." },
+    { "subject": "...", "body": "..." },
+    { "subject": "...", "body": "..." }
+  ]
+}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: "You are a helpful assistant that outputs JSON." },
+        { role: "user", content: prompt }
+      ],
       response_format: { type: "json_object" },
     });
 
-    // Expecting JSON from GPT if possible, or parse text
-    // For simplicity in this demo, we'll ask GPT for JSON in the system prompt if we were being strict
-    // But let's just assume it returns text and we wrap it
-    const content = completion.choices[0].message.content || "";
-    
-    // Save to DB
-    const { data: emailData, error: emailError } = await supabase
-      .from("emails")
-      .insert({
-        lead_id: lead.id,
-        subject: `Quick thought for ${lead.company}`,
-        body: content,
-      })
-      .select()
-      .single();
+    const content = JSON.parse(completion.choices[0].message.content || "{}");
+    const variations = content.variations || [];
 
-    if (emailError) throw emailError;
+    if (variations.length === 0) {
+      throw new Error("Failed to generate email variations");
+    }
+
+    // Save the first variation to the history table (generated_emails)
+    // In a real app, maybe save all or let user pick. For now, let's save the first one as a record.
+    const { error: emailError } = await supabase
+      .from("generated_emails")
+      .insert({
+        user_id: userId,
+        lead_name: leadName,
+        company: company,
+        subject: variations[0].subject,
+        email_body: variations[0].body,
+      });
+
+    if (emailError) console.error("Error saving to history:", emailError);
 
     // Deduct credit
-    await supabase.rpc("increment_used_credits", { user_id_param: userId });
+    await supabase.rpc("deduct_user_credits", { user_id_param: userId });
 
-    res.json({ success: true, email: emailData });
+    res.json({ success: true, variations });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: "OpenAI error: " + error.message });
@@ -214,89 +317,60 @@ app.post("/api/send-email", async (req, res) => {
   }
 });
 
-// 5. Stripe Checkout
-app.post("/api/stripe/checkout", async (req, res) => {
-  const { userId, plan } = req.body;
+// 5. Create Checkout Session
+app.post("/api/create-checkout-session", async (req, res) => {
+  const { userId, planId } = req.body;
 
-  const priceIds: Record<string, string> = {
-    starter: process.env.STRIPE_STARTER_PRICE_ID || 'price_placeholder_starter',
-    pro: process.env.STRIPE_PRO_PRICE_ID || 'price_placeholder_pro',
-    agency: process.env.STRIPE_AGENCY_PRICE_ID || 'price_placeholder_agency',
+  if (!userId || !planId) {
+    return res.status(400).json({ error: "Missing userId or planId" });
+  }
+
+  // Map planId to Price IDs from environment variables
+  const priceMap: Record<string, string | undefined> = {
+    'pro_monthly': process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+    'pro_yearly': process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+    'agency_monthly': process.env.STRIPE_AGENCY_MONTHLY_PRICE_ID,
+    'agency_yearly': process.env.STRIPE_AGENCY_YEARLY_PRICE_ID,
   };
 
-  if (priceIds[plan].includes('placeholder')) {
-    return res.status(400).json({ error: "Stripe Price ID not configured for this plan." });
+  let priceId = priceMap[planId];
+
+  if (!priceId) {
+    return res.status(400).json({ error: `Invalid planId or Price ID not configured: ${planId}` });
   }
 
   try {
+    // If the ID provided is a Product ID (starts with prod_), resolve its default price
+    if (priceId.startsWith('prod_')) {
+      console.log(`Resolving default price for product: ${priceId}`);
+      const product = await stripe.products.retrieve(priceId);
+      const defaultPriceId = typeof product.default_price === 'string' 
+        ? product.default_price 
+        : (product.default_price as any)?.id;
+      
+      if (!defaultPriceId) {
+        return res.status(400).json({ error: `Product ${priceId} has no default price configured.` });
+      }
+      priceId = defaultPriceId;
+    }
+
+    const { data: user } = await supabase.from("users").select("email").eq("id", userId).single();
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [{ price: priceIds[plan], quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
+      customer_email: user?.email,
       success_url: `${process.env.APP_URL}/dashboard?success=true`,
       cancel_url: `${process.env.APP_URL}/billing?canceled=true`,
-      metadata: { userId, plan },
+      metadata: { userId, plan: planId },
     });
 
     res.json({ url: session.url });
   } catch (error: any) {
+    console.error("Stripe Checkout Error:", error);
     res.status(500).json({ error: error.message });
   }
-});
-
-// 5. Stripe Webhook
-app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  const sig = req.headers["stripe-signature"] as string;
-
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
-  } catch (err: any) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  const session = event.data.object as any;
-
-  switch (event.type) {
-    case "checkout.session.completed":
-    case "invoice.paid":
-      const userId = session.metadata?.userId;
-      const plan = session.metadata?.plan;
-      const stripeSubscriptionId = session.subscription;
-      const stripeCustomerId = session.customer;
-
-      if (userId && plan) {
-        // Update subscription
-        await supabase.from("subscriptions").upsert({
-          user_id: userId,
-          plan,
-          status: "active",
-          stripe_customer_id: stripeCustomerId,
-          stripe_subscription_id: stripeSubscriptionId,
-          current_period_end: new Date(session.current_period_end * 1000).toISOString(),
-        });
-
-        // Update credits
-        let totalCredits = 10;
-        if (plan === "starter") totalCredits = 500;
-        if (plan === "pro") totalCredits = 2000;
-        if (plan === "agency") totalCredits = 999999; // Unlimited logic
-
-        await supabase.from("credits").update({
-          total_credits: totalCredits,
-          used_credits: 0,
-        }).eq("user_id", userId);
-      }
-      break;
-
-    case "customer.subscription.deleted":
-      await supabase.from("subscriptions")
-        .update({ status: "canceled" })
-        .eq("stripe_subscription_id", session.id);
-      break;
-  }
-
-  res.json({ received: true });
 });
 
 // --- Vite Integration ---

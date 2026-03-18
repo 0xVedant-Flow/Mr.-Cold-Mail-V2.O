@@ -25,12 +25,12 @@ const templates = [
 
 export const Templates = () => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Templates</h2>
-          <p className="text-slate-500 text-sm mt-1">Manage your email templates and AI prompts</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
+        <div className="text-center sm:text-left">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Templates</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">Manage your email templates and AI prompts</p>
         </div>
         <button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all">
           <Plus size={20} />
@@ -44,7 +44,7 @@ export const Templates = () => {
         <input 
           type="text" 
           placeholder="Search templates..." 
-          className="w-full pl-12 pr-4 py-3 glass rounded-2xl border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full pl-12 pr-4 py-3 glass rounded-2xl border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm md:text-base"
         />
       </div>
 
@@ -56,18 +56,18 @@ export const Templates = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="glass p-8 rounded-[32px] card-hover border-border/40 flex flex-col group"
+            className="glass p-6 md:p-8 rounded-[32px] card-hover border-border/40 flex flex-col group"
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", template.color)}>
-                <Sparkles size={24} />
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center", template.color)}>
+                <Sparkles size={20} className="md:w-6 md:h-6" />
               </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
-                  <Edit3 size={18} />
+              <div className="flex items-center gap-1 md:gap-2">
+                <button className="p-2 text-slate-400 hover:text-primary transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100">
+                  <Edit3 size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
-                <button className="p-2 text-slate-400 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
-                  <Trash2 size={18} />
+                <button className="p-2 text-slate-400 hover:text-destructive transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100">
+                  <Trash2 size={16} className="md:w-[18px] md:h-[18px]" />
                 </button>
                 <button className="p-2 text-slate-400 hover:text-primary transition-colors">
                   <MoreHorizontal size={20} />
@@ -75,9 +75,9 @@ export const Templates = () => {
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-slate-800 mb-4">{template.name}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-3 md:mb-4">{template.name}</h3>
             
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
               <span className="px-3 py-1 bg-muted rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 {template.tone}
               </span>
@@ -86,7 +86,7 @@ export const Templates = () => {
               </span>
             </div>
 
-            <div className="p-4 bg-muted/50 rounded-2xl text-xs text-slate-500 leading-relaxed font-medium mb-8 flex-grow">
+            <div className="p-4 bg-muted/50 rounded-2xl text-xs text-slate-500 leading-relaxed font-medium mb-6 md:mb-8 flex-grow">
               {template.preview}
             </div>
 
@@ -104,13 +104,13 @@ export const Templates = () => {
         {/* New Template Placeholder */}
         <motion.button
           whileHover={{ scale: 1.02 }}
-          className="glass p-8 rounded-[32px] border-2 border-dashed border-border/60 flex flex-col items-center justify-center text-slate-400 hover:border-primary/40 hover:text-primary transition-all min-h-[350px]"
+          className="glass p-8 rounded-[32px] border-2 border-dashed border-border/60 flex flex-col items-center justify-center text-slate-400 hover:border-primary/40 hover:text-primary transition-all min-h-[300px] md:min-h-[350px]"
         >
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Plus size={32} />
+          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Plus size={24} className="md:w-8 md:h-8" />
           </div>
-          <div className="text-lg font-bold">Create New Template</div>
-          <div className="text-sm font-medium">Save your best prompts for later</div>
+          <div className="text-base md:text-lg font-bold">Create New Template</div>
+          <div className="text-xs md:text-sm font-medium">Save your best prompts for later</div>
         </motion.button>
       </div>
     </div>

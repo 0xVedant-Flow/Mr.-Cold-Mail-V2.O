@@ -35,6 +35,7 @@ interface UserProfile {
   subscription?: {
     plan: string;
     status: string;
+    subscription_id?: string;
     current_period_end?: string;
   };
 }
@@ -69,28 +70,31 @@ export const useStore = create<AppState>((set, get) => ({
 
       console.log('Fetching profile for user:', user.id);
 
-      // Fetch profile, credits, and subscription in parallel
-      const [profileRes, creditsRes, subRes] = await Promise.all([
-        supabase.from('users').select('*').eq('id', user.id).single(),
-        supabase.from('credits').select('*').eq('user_id', user.id).single(),
-        supabase.from('subscriptions').select('*').eq('user_id', user.id).eq('status', 'active').maybeSingle(),
-      ]);
+      // Fetch consolidated profile from users table
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-      if (profileRes.error && profileRes.error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileRes.error);
-      }
-
-      if (creditsRes.error && creditsRes.error.code !== 'PGRST116') {
-        console.error('Error fetching credits:', creditsRes.error);
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
       }
 
       set({
         user: {
           id: user.id,
           email: user.email!,
-          full_name: profileRes.data?.full_name || '',
-          credits: creditsRes.data || { total_credits: 10, used_credits: 0 },
-          subscription: subRes.data,
+          full_name: profile?.full_name || '',
+          credits: {
+            total_credits: profile?.credits || 10,
+            used_credits: 0, // We can track used credits if we want, but for now let's just show balance
+          },
+          subscription: {
+            plan: profile?.plan || 'free',
+            status: profile?.status || 'active',
+            subscription_id: profile?.subscription_id,
+          },
         },
         loading: false,
       });
