@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS public.leads (
   email TEXT NOT NULL,
   company TEXT,
   website TEXT,
+  status TEXT DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

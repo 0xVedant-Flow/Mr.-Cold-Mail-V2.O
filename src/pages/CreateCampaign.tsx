@@ -29,11 +29,19 @@ export const CreateCampaign = () => {
   const [goal, setGoal] = React.useState('Book a Meeting');
   const [file, setFile] = React.useState<File | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
   const [error, setError] = React.useState('');
+  const [success, setSuccess] = React.useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
+        setError('Please upload a valid CSV file.');
+        return;
+      }
+      setFile(selectedFile);
+      setError('');
     }
   };
 
@@ -45,9 +53,11 @@ export const CreateCampaign = () => {
 
     setLoading(true);
     setError('');
+    setProgress(10);
 
     try {
       // 1. Create Campaign in DB
+      setProgress(20);
       const { data: campaign, error: campaignError } = await supabase
         .from('campaigns')
         .insert({
@@ -58,9 +68,17 @@ export const CreateCampaign = () => {
         .select()
         .single();
 
-      if (campaignError) throw campaignError;
+      if (campaignError) {
+        console.error('Campaign Creation Error:', campaignError);
+        if (campaignError.code === 'PGRST116' || campaignError.message.includes('schema cache')) {
+          throw new Error("Database table 'campaigns' not found. Please ensure you have run the database migrations in the Supabase SQL Editor.");
+        }
+        throw campaignError;
+      }
 
-      // 2. Read CSV and send as JSON
+      setProgress(40);
+
+      // 2. Read CSV
       const reader = new FileReader();
       const csvData = await new Promise<string>((resolve, reject) => {
         reader.onload = () => resolve(reader.result as string);
@@ -68,6 +86,9 @@ export const CreateCampaign = () => {
         reader.readAsText(file);
       });
 
+      setProgress(60);
+
+      // 3. Send to server for processing
       const response = await api.post('/upload-csv', {
         userId: user?.id,
         campaignId: campaign.id,
@@ -77,11 +98,22 @@ export const CreateCampaign = () => {
         goal
       });
 
-      // 3. Start email generation in background (handled by server after upload)
-      navigate(`/campaigns/${campaign.id}`);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setProgress(90);
+      setSuccess(true);
+
+      // 4. Redirect after a short delay to show success
+      setTimeout(() => {
+        navigate(`/campaigns/${campaign.id}`);
+      }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Campaign Launch Error:', err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
+      setProgress(0);
     }
   };
 
@@ -252,19 +284,46 @@ export const CreateCampaign = () => {
                 </div>
               )}
 
+              {loading && !success && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span>Processing Campaign</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      className="h-full bg-primary"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {success && (
+                <div className="p-6 bg-emerald-500/10 text-emerald-600 rounded-[32px] text-center space-y-3">
+                  <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                    <CheckCircle2 size={24} />
+                  </div>
+                  <div className="font-bold text-lg">Campaign Launched!</div>
+                  <p className="text-sm font-medium opacity-80">Redirecting you to the campaign dashboard...</p>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => setStep(1)}
-                  className="order-2 sm:order-1 flex-1 py-4 md:py-5 rounded-2xl font-bold text-slate-600 hover:bg-muted transition-all text-sm md:text-base"
+                  disabled={loading}
+                  className="order-2 sm:order-1 flex-1 py-4 md:py-5 rounded-2xl font-bold text-slate-600 hover:bg-muted transition-all text-sm md:text-base disabled:opacity-50"
                 >
                   Back
                 </button>
                 <button 
                   onClick={handleCreateCampaign}
-                  disabled={!file || loading}
+                  disabled={!file || loading || success}
                   className="order-1 sm:order-2 flex-[2] bg-primary hover:bg-primary/90 text-white py-4 md:py-5 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm md:text-base"
                 >
-                  {loading ? 'Processing...' : 'Launch Campaign'} <Sparkles size={20} />
+                  {loading ? 'Launching...' : 'Launch Campaign'} <Sparkles size={20} />
                 </button>
               </div>
             </div>

@@ -278,22 +278,70 @@ app.post("/api/upload-csv", async (req, res) => {
   const { userId, campaignId, csvData } = validation.data;
 
   try {
-    const results = Papa.parse(csvData, { header: true });
-    const leads = results.data.map((row: any) => ({
-      campaign_id: campaignId,
-      name: row.name,
-      email: row.email,
-      company: row.company,
-      website: row.website,
-    })).filter((l: any) => l.email && l.name);
+    // Parse CSV with PapaParse
+    const results = Papa.parse(csvData, { 
+      header: true,
+      skipEmptyLines: 'greedy',
+      transformHeader: (header) => header.toLowerCase().trim().replace(/[\s_-]/g, '')
+    });
 
-    if (leads.length === 0) return res.status(400).json({ error: "Invalid CSV" });
+    if (results.errors.length > 0) {
+      return res.status(400).json({ error: "CSV Parsing Error", details: results.errors });
+    }
 
+    // Dynamic Column Mapping
+    const mappings = {
+      name: ['name', 'fullname', 'contactname', 'leadname', 'first_name', 'firstname'],
+      email: ['email', 'emailaddress', 'contactemail', 'mail'],
+      company: ['company', 'companyname', 'organization', 'org', 'business'],
+      website: ['website', 'url', 'site', 'companywebsite', 'link', 'domain']
+    };
+
+    const leads = results.data.map((row: any) => {
+      const mappedLead: any = { campaign_id: campaignId };
+      const rowKeys = Object.keys(row);
+
+      // Map each target field to the best matching column in the row
+      for (const [target, aliases] of Object.entries(mappings)) {
+        const foundKey = rowKeys.find(key => aliases.includes(key));
+        if (foundKey) {
+          mappedLead[target] = row[foundKey];
+        }
+      }
+
+      return mappedLead;
+    }).filter((l: any) => {
+      // Basic validation: must have at least an email
+      return l.email && l.email.includes('@');
+    });
+
+    if (leads.length === 0) {
+      return res.status(400).json({ 
+        error: "No valid leads found. Ensure your CSV has at least an 'email' column with valid email addresses." 
+      });
+    }
+
+    // Batch insert leads
     const { data, error } = await supabase.from("leads").insert(leads).select();
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Supabase Insert Error:", error);
+      if (error.code === 'PGRST116' || error.message.includes('schema cache')) {
+        return res.status(500).json({ 
+          error: "Database table 'leads' not found. Please ensure you have run the database migrations.",
+          code: "MISSING_TABLE"
+        });
+      }
+      throw error;
+    }
 
-    res.json({ success: true, count: data.length });
+    res.json({ 
+      success: true, 
+      count: data.length,
+      message: `Successfully uploaded ${data.length} leads.`
+    });
   } catch (error: any) {
+    console.error("Upload CSV Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
