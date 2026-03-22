@@ -43,6 +43,7 @@ export const Settings = () => {
   
   // Preferences state
   const [fullName, setFullName] = useState(user?.full_name || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [tone, setTone] = useState(user?.default_tone || 'Professional');
   const [goal, setGoal] = useState(user?.default_goal || 'Book a Meeting');
   
@@ -53,6 +54,7 @@ export const Settings = () => {
   useEffect(() => {
     if (user) {
       setFullName(user.full_name || '');
+      setAvatarUrl(user.avatar_url || '');
       setTone(user.default_tone || 'Professional');
       setGoal(user.default_goal || 'Book a Meeting');
     }
@@ -72,7 +74,10 @@ export const Settings = () => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ full_name: fullName })
+        .update({ 
+          full_name: fullName,
+          avatar_url: avatarUrl
+        })
         .eq('id', user.id);
       
       if (error) throw error;
@@ -108,7 +113,7 @@ export const Settings = () => {
     if (!user) return;
     setLoading('gmail');
     try {
-      const { data } = await api.get(`/auth/google/url?state=${user.id}`);
+      const data = await api.get(`/auth/google/url?state=${user.id}`);
       
       // Use a more robust popup handling
       const width = 600;
@@ -307,6 +312,28 @@ export const Settings = () => {
             </button>
           </div>
           <div className="p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-3xl bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center text-slate-400">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <User size={40} />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Avatar URL</label>
+                <input 
+                  type="text"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Full Name</label>
@@ -418,8 +445,10 @@ export const Settings = () => {
                 </div>
               </div>
               <div className="p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
-                <div className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Available Credits</div>
-                <div className="text-3xl font-black text-indigo-900 mb-4">{user?.credits?.total_credits || 0}</div>
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Remaining Credits</div>
+                <div className="text-3xl font-black text-indigo-900 mb-4">
+                  {user?.credits ? (user.credits.total_credits - user.credits.used_credits) : 0}
+                </div>
                 <div className="text-xs text-indigo-600 font-medium">Credits reset every month on your billing date.</div>
               </div>
             </div>

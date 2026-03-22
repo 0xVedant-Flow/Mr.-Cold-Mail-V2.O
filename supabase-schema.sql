@@ -3,6 +3,14 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
+  avatar_url TEXT,
+  plan TEXT DEFAULT 'free',
+  role TEXT DEFAULT 'user',
+  credits INTEGER DEFAULT 10,
+  subscription_id TEXT,
+  status TEXT DEFAULT 'active',
+  default_tone TEXT DEFAULT 'Professional',
+  default_goal TEXT DEFAULT 'Book a Meeting',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -122,6 +130,61 @@ BEGIN;
   ALTER PUBLICATION supabase_realtime ADD TABLE emails;
 COMMIT;
 
+-- Create admin_logs table
+CREATE TABLE IF NOT EXISTS admin_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Create plans table
+CREATE TABLE IF NOT EXISTS plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  billing_cycle TEXT NOT NULL, -- 'monthly', 'yearly'
+  email_limit INTEGER NOT NULL,
+  features JSONB DEFAULT '[]'::jsonb,
+  is_active BOOLEAN DEFAULT true,
+  stripe_price_id TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Create email_templates table
+CREATE TABLE IF NOT EXISTS email_templates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- 'SaaS', 'Agency', 'Startup', 'Follow-up'
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS for new tables
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for new tables (Admin only)
+CREATE POLICY "Admins can view all logs" ON admin_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin')
+);
+
+CREATE POLICY "Admins can manage plans" ON plans FOR ALL USING (
+  EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin')
+);
+
+CREATE POLICY "Anyone can view active plans" ON plans FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Admins can manage templates" ON email_templates FOR ALL USING (
+  EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin')
+);
+
+CREATE POLICY "Users can view all templates" ON email_templates FOR SELECT USING (true);
+
 -- Create generated_emails table for the standalone generator
 CREATE TABLE IF NOT EXISTS generated_emails (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -145,11 +208,13 @@ CREATE POLICY "Users can delete their own generated emails" ON generated_emails 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.users (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
+  INSERT INTO public.users (id, email, full_name, plan, credits, status)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'free', 10, 'active')
+  ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO public.credits (user_id, total_credits, used_credits)
-  VALUES (new.id, 10, 0);
+  VALUES (new.id, 10, 0)
+  ON CONFLICT (user_id) DO NOTHING;
 
   RETURN new;
 END;
@@ -158,3 +223,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Seed: Set admin role for the owner
+-- Replace 'theswagotom@gmail.com' with the actual owner email
+UPDATE public.users SET role = 'admin' WHERE email = 'theswagotom@gmail.com';

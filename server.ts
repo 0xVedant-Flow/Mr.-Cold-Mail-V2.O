@@ -104,6 +104,27 @@ async function getGmailClient(userId: string) {
 // Middleware
 app.use(cors());
 
+// Admin Middleware
+const isAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const userId = req.headers['x-user-id'] as string;
+  
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized: No User ID provided' });
+  }
+
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (error || !user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  next();
+};
+
 // Webhook needs raw body - must be before express.json()
 app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"] as string;
@@ -138,18 +159,29 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
           if (plan.includes('pro')) credits = 1000;
           if (plan.includes('agency')) credits = 5000;
 
-          // Update users table
-          const { error } = await supabase
+          // Update users table for plan/status
+          const { error: userUpdateError } = await supabase
             .from("users")
             .update({
               plan: plan.split('_')[0], // pro or agency
-              credits: credits,
               subscription_id: subscriptionId,
               status: "active"
             })
             .eq("id", userId);
 
-          if (error) console.error("Error updating user after payment:", error);
+          if (userUpdateError) console.error("Error updating user after payment:", userUpdateError);
+
+          // Update credits table
+          const { error: creditsUpdateError } = await supabase
+            .from("credits")
+            .update({
+              total_credits: credits,
+              used_credits: 0,
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", userId);
+
+          if (creditsUpdateError) console.error("Error updating credits after payment:", creditsUpdateError);
           
           // Also update subscriptions table for tracking
           await supabase.from("subscriptions").upsert({
@@ -210,21 +242,138 @@ app.get("/api/health", (req, res) => {
 // 1. Credits Check Middleware
 const checkCredits = async (req: any, res: any, next: any) => {
   const { userId } = req.body;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-  const { data: user, error } = await supabase
-    .from("users")
-    .select("credits, plan, status")
-    .eq("id", userId)
-    .single();
-
-  if (error || !user) return res.status(404).json({ error: "User not found" });
-
-  if (user.plan === "agency" && user.status === "active") {
+  
+  // If no userId, allow as guest for now (as requested)
+  if (!userId) {
+    console.log("Guest generation requested");
     return next();
   }
 
-  if (user.credits <= 0) {
+  // Basic UUID validation to prevent DB errors
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    console.warn(`Invalid userId format: ${userId}`);
+    return res.status(400).json({ error: "Invalid user ID format" });
+  }
+
+  // Get user plan and status
+  let { data: user, error: userError } = await supabase
+    .from("users")
+    .select("plan, status")
+    .eq("id", userId)
+    .single();
+
+  // If user not found in public.users, they might be a new user who bypassed the trigger
+  if (userError || !user) {
+    // If it's a real error (not just "not found"), log it
+    if (userError && userError.code !== 'PGRST116') {
+      console.error("Error fetching user from public.users:", {
+        message: userError.message,
+        code: userError.code,
+        details: userError.details,
+        userId
+      });
+    }
+
+    console.log(`User ${userId} not found in public.users, attempting to create...`);
+    
+    // Get user info from Auth using service role
+    const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (authError) {
+      if (authError.status === 404) {
+        return res.status(404).json({ error: "User not found in Auth" });
+      }
+      console.error("Auth admin error:", {
+        message: authError.message,
+        status: authError.status,
+        userId
+      });
+      return res.status(500).json({ error: "Authentication system error" });
+    }
+
+    if (!authUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Create the user record using upsert to be safe
+    const userEmail = authUser.email || `user-${userId}@placeholder.com`;
+    const { data: newUser, error: createError } = await supabase
+      .from("users")
+      .upsert({
+        id: userId,
+        email: userEmail,
+        full_name: authUser.user_metadata?.full_name || '',
+        plan: 'free',
+        credits: 10,
+        status: 'active'
+      }, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error("Detailed Error creating user record:", {
+        message: createError.message,
+        code: createError.code,
+        details: createError.details,
+        hint: createError.hint,
+        userId,
+        email: userEmail,
+        metadata: authUser.user_metadata
+      });
+      return res.status(500).json({ 
+        error: "Failed to initialize user profile",
+        details: createError.message,
+        code: createError.code
+      });
+    }
+
+    // Also create/update credits record
+    const { error: creditsUpsertError } = await supabase.from("credits").upsert({
+      user_id: userId,
+      total_credits: 10,
+      used_credits: 0
+    });
+
+    if (creditsUpsertError) {
+      console.error("Error creating credits record:", {
+        message: creditsUpsertError.message,
+        code: creditsUpsertError.code,
+        details: creditsUpsertError.details,
+        userId
+      });
+    }
+
+    user = newUser;
+  }
+
+  if (user && user.status !== 'active') {
+    return res.status(403).json({ error: "Your account is currently inactive. Please contact support." });
+  }
+
+  // Get user credits
+  const { data: credits, error: creditsError } = await supabase
+    .from("credits")
+    .select("total_credits, used_credits")
+    .eq("user_id", userId)
+    .single();
+
+  if (creditsError || !credits) {
+    // Create credits if missing
+    await supabase.from("credits").upsert({
+      user_id: userId,
+      total_credits: 10,
+      used_credits: 0
+    });
+    return next();
+  }
+
+  if (user && user.plan === "agency" && user.status === "active") {
+    return next();
+  }
+
+  const remainingCredits = credits.total_credits - credits.used_credits;
+  if (remainingCredits <= 0) {
     return res.status(403).json({ error: "You’ve reached your credit limit. Upgrade to continue." });
   }
 
@@ -232,7 +381,7 @@ const checkCredits = async (req: any, res: any, next: any) => {
 };
 
 const generateEmailSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
   leadName: z.string().min(1),
   company: z.string().min(1),
   website: z.string().optional(),
@@ -251,29 +400,30 @@ app.post("/api/generate-email", checkCredits, async (req, res) => {
   const { userId, leadName, company, website, offer, tone, goal } = validation.data;
 
   try {
-    const prompt = `You are a world-class cold email copywriter. Write 3 highly personalized, human-like cold email variations for the following:
+    const prompt = `You are a world-class SaaS founder and senior AI engineer at "Mr. Cold Mail".
+Your mission is to write a short, high-impact, hyper-personalized cold email that feels like a 1-to-1 message from a peer.
 
-Lead Name: ${leadName}
+Recipient: ${leadName}
 Company: ${company}
-Website: ${website || "N/A"}
+Website Context: ${website || "Not provided"}
+Our Unique Offer: ${offer}
 
-User Offer: ${offer}
-Tone: ${tone}
 Goal: ${goal}
+Tone: ${tone} (Conversational, authentic, and direct. NO corporate jargon.)
 
-RULES:
-- Max 120 words per email.
-- No generic lines like "I hope you're doing well".
-- No buzzwords.
-- Personalized intro based on company/insight.
-- Soft CTA at the end.
-- Return 3 variations.
-- For EACH variation, also provide a unique subject line.
+STRICT WRITING GUIDELINES:
+1. THE HOOK: Start with a specific observation about their company or role. Avoid "I saw your website". Be more insightful.
+2. NO ROBOTIC FILLERS: Absolutely NO "I hope this finds you well", "My name is...", or "I'm reaching out because...".
+3. BREVITY IS KING: Keep it between 75-110 words. Every word must earn its place.
+4. HUMAN RHYTHM: Use varied sentence structures. Some short. Some slightly longer. Use contractions (don't, we're) to sound natural.
+5. THE CTA: Use a low-friction, open-ended question (e.g., "Worth a quick chat next week?" or "Open to seeing how this works?").
+6. PERSONA: You are a busy but helpful expert. You aren't "selling"; you're offering a specific solution to a problem they likely have.
+7. VARIATIONS: Each variation must have a distinct angle (e.g., one focused on speed, one on ROI, one on simplicity).
 
-Return the response as a JSON object with this structure:
+Output Format (JSON ONLY):
 {
   "variations": [
-    { "subject": "...", "body": "..." },
+    { "subject": "Specific, intriguing subject line", "body": "The email body..." },
     { "subject": "...", "body": "..." },
     { "subject": "...", "body": "..." }
   ]
@@ -282,7 +432,7 @@ Return the response as a JSON object with this structure:
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "You are a helpful assistant that outputs JSON." },
+        { role: "system", content: "You are a world-class cold email copywriter. You output ONLY valid JSON." },
         { role: "user", content: prompt }
       ],
       response_format: { type: "json_object" },
@@ -295,27 +445,145 @@ Return the response as a JSON object with this structure:
       throw new Error("Failed to generate email variations");
     }
 
-    // Save the first variation to the history table (generated_emails)
-    // In a real app, maybe save all or let user pick. For now, let's save the first one as a record.
-    const { error: emailError } = await supabase
-      .from("generated_emails")
-      .insert({
-        user_id: userId,
-        lead_name: leadName,
-        company: company,
-        subject: variations[0].subject,
-        email_body: variations[0].body,
-      });
+    // Save to history if user is logged in
+    if (userId) {
+      const { error: emailError } = await supabase
+        .from("generated_emails")
+        .insert({
+          user_id: userId,
+          lead_name: leadName,
+          company: company,
+          subject: variations[0].subject,
+          email_body: variations[0].body,
+        });
 
-    if (emailError) console.error("Error saving to history:", emailError);
+      if (emailError) console.error("Error saving to history:", emailError);
 
-    // Deduct credit
-    await supabase.rpc("deduct_user_credits", { user_id_param: userId });
+      // Deduct credit using the correct RPC name from schema
+      await supabase.rpc("increment_used_credits", { user_id_param: userId });
+    }
 
     res.json({ success: true, variations });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: "OpenAI error: " + error.message });
+  }
+});
+
+const bulkGenerateSchema = z.object({
+  userId: z.string().uuid().optional(),
+  campaignId: z.string().uuid(),
+  offer: z.string().min(10),
+  tone: z.string().default('Professional'),
+  goal: z.string().default('Book a Meeting'),
+});
+
+// 2b. Bulk Generate Emails
+app.post("/api/bulk-generate", checkCredits, async (req, res) => {
+  const validation = bulkGenerateSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
+  }
+
+  const { userId, campaignId, offer, tone, goal } = validation.data;
+
+  try {
+    // 1. Get leads for this campaign
+    const { data: leads, error: leadsError } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("campaign_id", campaignId);
+
+    if (leadsError || !leads || leads.length === 0) {
+      return res.status(404).json({ error: "No leads found for this campaign" });
+    }
+
+    // 2. Check if user has enough credits (if logged in)
+    if (userId) {
+      const { data: credits, error: creditsError } = await supabase
+        .from("credits")
+        .select("total_credits, used_credits")
+        .eq("user_id", userId)
+        .single();
+
+      if (creditsError || !credits) {
+        return res.status(404).json({ error: "Credits not found" });
+      }
+
+      const remainingCredits = credits.total_credits - credits.used_credits;
+      if (remainingCredits < leads.length) {
+        return res.status(403).json({ error: `Not enough credits. You need ${leads.length} credits but have ${remainingCredits}.` });
+      }
+    }
+
+    // 3. Generate emails in parallel (with a limit to avoid rate limits)
+    // For simplicity, we'll do them in chunks or just map them if the list is small.
+    // In production, use a queue system.
+    const results = [];
+    const batchSize = 5;
+    
+    for (let i = 0; i < leads.length; i += batchSize) {
+      const batch = leads.slice(i, i + batchSize);
+      const batchPromises = batch.map(async (lead) => {
+        try {
+          const prompt = `Write a hyper-personalized, high-converting cold email.
+Recipient: ${lead.name}
+Company: ${lead.company}
+Website: ${lead.website || "N/A"}
+Our Offer: ${offer}
+Goal: ${goal}
+Tone: ${tone}
+
+Rules:
+- Start with a unique hook about ${lead.company}
+- No "I hope you're well" or robotic intros
+- Word count: 80-110 words
+- Natural, conversational flow
+- Low-friction CTA
+
+Return JSON: { "subject": "...", "body": "..." }`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: "You are a world-class cold email copywriter. Output JSON." },
+              { role: "user", content: prompt }
+            ],
+            response_format: { type: "json_object" },
+          });
+
+          const content = JSON.parse(completion.choices[0].message.content || "{}");
+          
+          // Save to generated_emails if logged in
+          if (userId) {
+            await supabase.from("generated_emails").insert({
+              user_id: userId,
+              lead_name: lead.name,
+              company: lead.company,
+              subject: content.subject,
+              email_body: content.body,
+              lead_id: lead.id
+            });
+
+            // Deduct credit using correct RPC
+            await supabase.rpc("increment_used_credits", { user_id_param: userId });
+          }
+
+          return { success: true, leadId: lead.id };
+        } catch (err) {
+          console.error(`Error generating for lead ${lead.id}:`, err);
+          return { success: false, leadId: lead.id, error: err.message };
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+    }
+
+    res.json({ success: true, results });
+  } catch (error: any) {
+    console.error("Bulk Generate Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -348,33 +616,34 @@ app.post("/api/upload-csv", async (req, res) => {
 
     // Dynamic Column Mapping
     const mappings = {
-      name: ['name', 'fullname', 'contactname', 'leadname', 'first_name', 'firstname'],
-      email: ['email', 'emailaddress', 'contactemail', 'mail'],
-      company: ['company', 'companyname', 'organization', 'org', 'business'],
-      website: ['website', 'url', 'site', 'companywebsite', 'link', 'domain']
+      name: ['name', 'fullname', 'contactname', 'leadname', 'first_name', 'firstname', 'person'],
+      email: ['email', 'emailaddress', 'contactemail', 'mail', 'e-mail'],
+      company: ['company', 'companyname', 'organization', 'org', 'business', 'employer'],
+      website: ['website', 'url', 'site', 'companywebsite', 'link', 'domain', 'web']
     };
 
     const leads = results.data.map((row: any) => {
       const mappedLead: any = { campaign_id: campaignId };
-      const rowKeys = Object.keys(row);
+      const rowKeys = Object.keys(row).map(k => k.toLowerCase().trim().replace(/[\s_-]/g, ''));
+      const originalKeys = Object.keys(row);
 
       // Map each target field to the best matching column in the row
       for (const [target, aliases] of Object.entries(mappings)) {
-        const foundKey = rowKeys.find(key => aliases.includes(key));
-        if (foundKey) {
-          mappedLead[target] = row[foundKey];
+        const foundIndex = rowKeys.findIndex(key => aliases.includes(key));
+        if (foundIndex !== -1) {
+          mappedLead[target] = row[originalKeys[foundIndex]];
         }
       }
 
       return mappedLead;
     }).filter((l: any) => {
-      // Basic validation: must have at least an email
-      return l.email && l.email.includes('@');
+      // Basic validation: must have at least an email and a name
+      return l.email && l.email.includes('@') && l.name;
     });
 
     if (leads.length === 0) {
       return res.status(400).json({ 
-        error: "No valid leads found. Ensure your CSV has at least an 'email' column with valid email addresses." 
+        error: "No valid leads found. Ensure your CSV has 'name' and 'email' columns with valid data." 
       });
     }
 
@@ -701,6 +970,172 @@ app.post("/api/delete-account", async (req, res) => {
     res.json({ success: true, message: "Account deleted successfully" });
   } catch (error: any) {
     console.error("Delete Account Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Admin API Routes ---
+
+// Helper to log admin actions
+const logAdminAction = async (adminId: string, action: string, targetUserId: string | null, details: any) => {
+  await supabase.from('admin_logs').insert({
+    admin_id: adminId,
+    action,
+    target_user_id: targetUserId,
+    details
+  });
+};
+
+// 1. Dashboard Stats
+app.get("/api/admin/stats", isAdmin, async (req, res) => {
+  try {
+    const { data: totalUsers } = await supabase.from('users').select('id', { count: 'exact' });
+    const { data: activeSubs } = await supabase.from('subscriptions').select('id', { count: 'exact' }).eq('status', 'active');
+    
+    // Monthly Revenue (sum of successful payments in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data: recentPayments } = await supabase
+      .from('subscriptions')
+      .select('plan, created_at')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    // Mock revenue calculation based on plans (since we don't have a payments table yet, we use subscriptions)
+    let revenue = 0;
+    recentPayments?.forEach(p => {
+      if (p.plan.includes('pro')) revenue += 29;
+      if (p.plan.includes('agency')) revenue += 99;
+    });
+
+    // Emails generated today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { count: emailsToday } = await supabase
+      .from('generated_emails')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+
+    res.json({
+      totalUsers: totalUsers?.length || 0,
+      activeSubscriptions: activeSubs?.length || 0,
+      monthlyRevenue: revenue,
+      emailsGeneratedToday: emailsToday || 0
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2. User Management
+app.get("/api/admin/users", isAdmin, async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*, credits(total_credits, used_credits)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(users);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  const adminId = req.headers['x-user-id'] as string;
+
+  try {
+    const { error } = await supabase.from('users').update(updates).eq('id', id);
+    if (error) throw error;
+
+    await logAdminAction(adminId, 'user_updated', id, updates);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/users/:id/credits", isAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { amount, action } = req.body; // action: 'add', 'reset'
+  const adminId = req.headers['x-user-id'] as string;
+
+  try {
+    if (action === 'reset') {
+      await supabase.from('credits').update({ used_credits: 0 }).eq('user_id', id);
+    } else {
+      const { data: current } = await supabase.from('credits').select('total_credits').eq('user_id', id).single();
+      await supabase.from('credits').update({ total_credits: (current?.total_credits || 0) + amount }).eq('user_id', id);
+    }
+
+    await logAdminAction(adminId, `credits_${action}`, id, { amount });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. Plans Management
+app.get("/api/admin/plans", isAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('plans').select('*');
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/plans", isAdmin, async (req, res) => {
+  const plan = req.body;
+  const adminId = req.headers['x-user-id'] as string;
+  try {
+    const { data, error } = await supabase.from('plans').insert(plan).select().single();
+    if (error) throw error;
+    await logAdminAction(adminId, 'plan_created', null, plan);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4. Templates Management
+app.get("/api/admin/templates", isAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('email_templates').select('*');
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/templates", isAdmin, async (req, res) => {
+  const template = req.body;
+  const adminId = req.headers['x-user-id'] as string;
+  try {
+    const { data, error } = await supabase.from('email_templates').insert(template).select().single();
+    if (error) throw error;
+    await logAdminAction(adminId, 'template_created', null, template);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. Admin Logs
+app.get("/api/admin/logs", isAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_logs')
+      .select('*, admin:users!admin_id(email), target:users!target_user_id(email)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });

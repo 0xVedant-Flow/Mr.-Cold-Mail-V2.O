@@ -28,6 +28,7 @@ interface UserProfile {
   id: string;
   email: string;
   full_name: string;
+  avatar_url?: string;
   credits?: {
     total_credits: number;
     used_credits: number;
@@ -44,6 +45,7 @@ interface UserProfile {
   };
   default_tone?: string;
   default_goal?: string;
+  role?: 'user' | 'admin';
 }
 
 interface AppState {
@@ -93,6 +95,30 @@ export const useStore = create<AppState>((set, get) => ({
         }
       }
 
+      // Fetch credits
+      const { data: creditsData, error: creditsError } = await supabase
+        .from('credits')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (creditsError && creditsError.code !== 'PGRST116') {
+        console.error('Error fetching credits:', creditsError);
+      }
+
+      // Fetch subscription
+      const { data: subData, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (subError && subError.code !== 'PGRST116') {
+        console.error('Error fetching subscription:', subError);
+      }
+
       // Fetch Gmail account
       const { data: gmailAccount, error: gmailError } = await supabase
         .from('gmail_accounts')
@@ -108,15 +134,16 @@ export const useStore = create<AppState>((set, get) => ({
         user: {
           id: user.id,
           email: user.email!,
-          full_name: profile?.full_name || '',
+          full_name: profile?.full_name || user.user_metadata?.full_name || '',
+          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
           credits: {
-            total_credits: profile?.credits || 10,
-            used_credits: 0, // We can track used credits if we want, but for now let's just show balance
+            total_credits: creditsData?.total_credits || 10,
+            used_credits: creditsData?.used_credits || 0,
           },
           subscription: {
-            plan: profile?.plan || 'free',
-            status: profile?.status || 'active',
-            subscription_id: profile?.subscription_id,
+            plan: subData?.plan || 'free',
+            status: subData?.status || 'active',
+            subscription_id: subData?.stripe_subscription_id,
           },
           gmailAccount: gmailAccount ? {
             email: gmailAccount.email,
@@ -124,6 +151,7 @@ export const useStore = create<AppState>((set, get) => ({
           } : undefined,
           default_tone: profile?.default_tone || 'Professional',
           default_goal: profile?.default_goal || 'Book a Meeting',
+          role: profile?.role || 'user',
         },
         loading: false,
       });

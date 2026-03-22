@@ -135,7 +135,7 @@ export const Dashboard = () => {
                 <div className="text-right">
                   <div className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">Remaining</div>
                   <div className="text-xl md:text-2xl font-bold text-slate-800">
-                    {user?.credits?.total_credits || 0}
+                    {user?.credits ? (user.credits.total_credits - user.credits.used_credits) : 0}
                   </div>
                 </div>
               </div>
@@ -143,12 +143,16 @@ export const Dashboard = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
                   <span>Plan: {user?.subscription?.plan || 'Free'}</span>
-                  <span>{user?.credits?.total_credits || 0} Credits Left</span>
+                  <span>{user?.credits ? (user.credits.total_credits - user.credits.used_credits) : 0} Credits Left</span>
                 </div>
                 <div className="h-2.5 md:h-3 bg-muted rounded-full overflow-hidden p-0.5">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: user?.subscription?.plan === 'agency' ? '100%' : `${Math.min(100, ((user?.credits?.total_credits || 0) / 1000) * 100)}%` }}
+                    animate={{ 
+                      width: user?.subscription?.plan === 'agency' 
+                        ? '100%' 
+                        : `${Math.min(100, (((user?.credits?.total_credits || 0) - (user?.credits?.used_credits || 0)) / (user?.credits?.total_credits || 1)) * 100)}%` 
+                    }}
                     className="h-full bg-primary rounded-full shadow-lg shadow-primary/20"
                   />
                 </div>

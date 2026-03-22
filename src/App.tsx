@@ -15,6 +15,17 @@ import { Settings } from './pages/Settings';
 import { Billing } from './pages/Billing';
 import { Generator } from './pages/Generator';
 import { Leads } from './pages/Leads';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import AdminLogs from './pages/admin/Logs';
+import { 
+  AdminSubscriptions, 
+  AdminPlans, 
+  AdminUsage, 
+  AdminTemplates, 
+  AdminSettings 
+} from './pages/admin/Placeholders';
 import { supabase } from './lib/supabase';
 import { useStore } from './store/useStore';
 import { FullPageLoading } from './components/LoadingSpinner';
@@ -23,6 +34,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useStore();
   if (loading) return <FullPageLoading message="Verifying session..." />;
   if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useStore();
+  if (loading) return <FullPageLoading message="Verifying admin session..." />;
+  if (!user || user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -81,6 +99,13 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
+  avatar_url TEXT,
+  plan TEXT DEFAULT 'free',
+  credits INTEGER DEFAULT 10,
+  subscription_id TEXT,
+  subscription_status TEXT,
+  default_tone TEXT DEFAULT 'Professional',
+  default_goal TEXT DEFAULT 'Book a Meeting',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -122,14 +147,29 @@ CREATE TABLE IF NOT EXISTS public.credits (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 6. Enable RLS
+-- 6. Create generated_emails table
+CREATE TABLE IF NOT EXISTS public.generated_emails (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  lead_name TEXT,
+  lead_email TEXT,
+  company TEXT,
+  subject TEXT,
+  body TEXT,
+  tone TEXT,
+  goal TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 7. Enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE credits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE generated_emails ENABLE ROW LEVEL SECURITY;
 
--- 7. RLS Policies
+-- 8. RLS Policies
 CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can view their own campaigns" ON campaigns FOR SELECT USING (auth.uid() = user_id);
@@ -140,15 +180,21 @@ CREATE POLICY "Users can view leads of their campaigns" ON leads FOR SELECT USIN
 CREATE POLICY "Users can insert leads into their campaigns" ON leads FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM campaigns WHERE campaigns.id = leads.campaign_id AND campaigns.user_id = auth.uid()));
 CREATE POLICY "Users can view emails of their leads" ON emails FOR SELECT USING (EXISTS (SELECT 1 FROM leads JOIN campaigns ON campaigns.id = leads.campaign_id WHERE leads.id = emails.lead_id AND campaigns.user_id = auth.uid()));
 CREATE POLICY "Users can view their own credits" ON credits FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own generated emails" ON generated_emails FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own generated emails" ON generated_emails FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- 8. Trigger to create user profile and credits on signup
+-- 9. Trigger to create user profile and credits on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.users (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name');
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name')
+  ON CONFLICT (id) DO NOTHING;
+  
   INSERT INTO public.credits (user_id, total_credits, used_credits)
-  VALUES (new.id, 10, 0);
+  VALUES (new.id, 10, 0)
+  ON CONFLICT (user_id) DO NOTHING;
+  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -215,6 +261,18 @@ CREATE TRIGGER on_auth_user_created
         <Route path="/generator" element={<ProtectedRoute><Layout><Generator /></Layout></ProtectedRoute>} />
         <Route path="/leads" element={<ProtectedRoute><Layout><Leads /></Layout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="subscriptions" element={<AdminSubscriptions />} />
+          <Route path="plans" element={<AdminPlans />} />
+          <Route path="usage" element={<AdminUsage />} />
+          <Route path="templates" element={<AdminTemplates />} />
+          <Route path="logs" element={<AdminLogs />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
