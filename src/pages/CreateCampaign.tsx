@@ -151,13 +151,13 @@ export const CreateCampaign = () => {
             className="glass p-6 md:p-10 rounded-[32px] md:rounded-[48px] border-border/40 space-y-8 md:space-y-10"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Campaign Details</h2>
-              <p className="text-slate-500 text-sm md:text-base font-medium">Tell us about what you're offering.</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Campaign Details</h2>
+              <p className="text-muted-foreground text-sm md:text-base font-medium">Tell us about what you're offering.</p>
             </div>
 
             <div className="space-y-6 md:space-y-8">
               <div className="space-y-3">
-                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Target size={14} /> Campaign Name
                 </label>
                 <input 
@@ -165,12 +165,12 @@ export const CreateCampaign = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Q1 SaaS Outreach"
-                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all text-sm md:text-base"
+                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-foreground transition-all text-sm md:text-base"
                 />
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Sparkles size={14} /> Your Offer / Pitch
                 </label>
                 <textarea 
@@ -178,19 +178,19 @@ export const CreateCampaign = () => {
                   onChange={(e) => setOffer(e.target.value)}
                   placeholder="Describe your product, service, or specific offer..."
                   rows={4}
-                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all resize-none text-sm md:text-base"
+                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-foreground transition-all resize-none text-sm md:text-base"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <MessageSquare size={14} /> Email Tone
                   </label>
                   <select 
                     value={tone}
                     onChange={(e) => setTone(e.target.value)}
-                    className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all appearance-none text-sm md:text-base"
+                    className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-foreground transition-all appearance-none text-sm md:text-base"
                   >
                     <option>Professional</option>
                     <option>Casual</option>
@@ -199,13 +199,13 @@ export const CreateCampaign = () => {
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Zap size={14} /> Campaign Goal
                   </label>
                   <select 
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-800 transition-all appearance-none text-sm md:text-base"
+                    className="w-full px-6 md:px-8 py-4 md:py-5 bg-muted rounded-2xl border-none focus:ring-2 focus:ring-primary/20 font-bold text-foreground transition-all appearance-none text-sm md:text-base"
                   >
                     <option>Book a Meeting</option>
                     <option>Get a Reply</option>
@@ -233,8 +233,8 @@ export const CreateCampaign = () => {
             className="glass p-6 md:p-10 rounded-[32px] md:rounded-[48px] border-border/40 space-y-8 md:space-y-10"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Upload Leads</h2>
-              <p className="text-slate-500 text-sm md:text-base font-medium">Upload your CSV file with lead information.</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Upload Leads</h2>
+              <p className="text-muted-foreground text-sm md:text-base font-medium">Upload your CSV file with lead information.</p>
             </div>
 
             <div className="space-y-6 md:space-y-8">
@@ -255,8 +255,8 @@ export const CreateCampaign = () => {
                         <FileText size={32} className="md:w-10 md:h-10" />
                       </div>
                       <div>
-                        <p className="text-lg md:text-xl font-bold text-slate-800 truncate px-4">{file.name}</p>
-                        <p className="text-slate-500 text-sm md:text-base font-medium">{(file.size / 1024).toFixed(2)} KB</p>
+                        <p className="text-lg md:text-xl font-bold text-foreground truncate px-4">{file.name}</p>
+                        <p className="text-muted-foreground text-sm md:text-base font-medium">{(file.size / 1024).toFixed(2)} KB</p>
                       </div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setFile(null); }}
@@ -271,12 +271,12 @@ export const CreateCampaign = () => {
                         <Upload size={32} className="md:w-10 md:h-10" />
                       </div>
                       <div>
-                        <p className="text-lg md:text-xl font-bold text-slate-800">Drop your CSV here</p>
-                        <p className="text-slate-500 text-sm md:text-base font-medium">or click to browse files</p>
+                        <p className="text-lg md:text-xl font-bold text-foreground">Drop your CSV here</p>
+                        <p className="text-muted-foreground text-sm md:text-base font-medium">or click to browse files</p>
                       </div>
-                      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
                         <span>Required: name, email</span>
-                        <span className="hidden md:block w-1 h-1 bg-slate-300 rounded-full" />
+                        <span className="hidden md:block w-1 h-1 bg-border rounded-full" />
                         <span>Optional: company, website</span>
                       </div>
                     </div>
@@ -293,7 +293,7 @@ export const CreateCampaign = () => {
 
               {loading && !success && (
                 <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     <span>Processing Campaign</span>
                     <span>{progress}%</span>
                   </div>
@@ -321,7 +321,7 @@ export const CreateCampaign = () => {
                 <button 
                   onClick={() => setStep(1)}
                   disabled={loading}
-                  className="order-2 sm:order-1 flex-1 py-4 md:py-5 rounded-2xl font-bold text-slate-600 hover:bg-muted transition-all text-sm md:text-base disabled:opacity-50"
+                  className="order-2 sm:order-1 flex-1 py-4 md:py-5 rounded-2xl font-bold text-muted-foreground hover:bg-muted transition-all text-sm md:text-base disabled:opacity-50"
                 >
                   Back
                 </button>

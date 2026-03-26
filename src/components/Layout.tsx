@@ -51,7 +51,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <motion.span 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="font-bold text-lg tracking-tight"
+            className="font-bold text-lg tracking-tight text-sidebar-foreground"
           >
             Mr. Cold Mail
           </motion.span>
@@ -72,7 +72,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 (!isSidebarOpen && !isMobileMenuOpen) && "justify-center px-0"
               )}
             >
-              <item.icon size={20} className={cn(isActive ? "text-primary" : "text-slate-400")} />
+              <item.icon size={20} className={cn(isActive ? "text-primary" : "text-muted-foreground/60")} />
               {(isSidebarOpen || isMobileMenuOpen) && <span>{item.label}</span>}
             </Link>
           );
@@ -136,18 +136,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="flex items-center gap-3 md:gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg lg:hidden"
+              className="p-2 text-muted-foreground hover:bg-muted rounded-lg lg:hidden"
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-lg md:text-xl font-semibold text-slate-800 truncate max-w-[150px] md:max-w-none">
+            <h1 className="text-lg md:text-xl font-semibold text-foreground truncate max-w-[150px] md:max-w-none">
               {activeItem.label}
             </h1>
           </div>
 
           <div className="flex items-center gap-2 md:gap-6">
             <div className="relative hidden xl:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <input 
                 type="text" 
                 placeholder="Search..." 
@@ -156,9 +156,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              <button className="p-2 text-slate-400 hover:text-primary transition-colors relative hidden sm:block">
+              <button className="p-2 text-muted-foreground hover:text-primary transition-colors relative hidden sm:block">
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border-2 border-white" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
               </button>
               
               <button 
@@ -173,8 +173,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="text-right hidden sm:block">
-                  <div className="text-sm font-bold text-slate-800 truncate max-w-[100px]">{user?.full_name || 'User'}</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  <div className="text-sm font-bold text-foreground truncate max-w-[100px]">{user?.full_name || 'User'}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                     {user?.subscription?.plan || 'Free'} Plan
                   </div>
                 </div>

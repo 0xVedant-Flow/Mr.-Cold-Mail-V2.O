@@ -1,9 +1,9 @@
 import React from 'react';
 
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
-  <div className="bg-white p-12 rounded-2xl border border-black/5 shadow-sm text-center">
-    <h2 className="text-2xl font-bold text-black mb-2">{title}</h2>
-    <p className="text-black/40 font-medium">This section is under development.</p>
+  <div className="bg-card p-12 rounded-2xl border border-border shadow-sm text-center">
+    <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
+    <p className="text-muted-foreground font-medium">This section is under development.</p>
   </div>
 );
 

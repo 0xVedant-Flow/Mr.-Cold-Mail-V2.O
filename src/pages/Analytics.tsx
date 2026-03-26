@@ -51,14 +51,14 @@ const StatsCard = ({ label, value, change, trend, icon: Icon, color }: {
       </div>
       <div className={cn(
         "flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg",
-        trend === 'up' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+        trend === 'up' ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
       )}>
         {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
         {change}
       </div>
     </div>
-    <div className="text-3xl font-bold text-slate-800 mb-1">{value}</div>
-    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">{label}</div>
+    <div className="text-3xl font-bold text-foreground mb-1">{value}</div>
+    <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{label}</div>
   </div>
 );
 
@@ -73,9 +73,9 @@ export const Analytics = () => {
   const replyRate = totalSent > 0 ? 8.4 : 0;
 
   const stats: { label: string; value: string; change: string; trend: 'up' | 'down'; icon: any; color: string; }[] = [
-    { label: 'Total Sent', value: totalSent.toLocaleString(), change: '+12.5%', trend: 'up', icon: Mail, color: 'text-blue-500' },
+    { label: 'Total Sent', value: totalSent.toLocaleString(), change: '+12.5%', trend: 'up', icon: Mail, color: 'text-primary' },
     { label: 'Open Rate', value: `${openRate}%`, change: '+4.3%', trend: 'up', icon: TrendingUp, color: 'text-emerald-500' },
-    { label: 'Reply Rate', value: `${replyRate}%`, change: '-1.2%', trend: 'down', icon: MessageSquare, color: 'text-purple-500' },
+    { label: 'Reply Rate', value: `${replyRate}%`, change: '-1.2%', trend: 'down', icon: MessageSquare, color: 'text-indigo-500' },
     { label: 'Total Leads', value: totalLeads.toLocaleString(), change: '+24.5%', trend: 'up', icon: Users, color: 'text-orange-500' },
   ];
 
@@ -104,14 +104,14 @@ export const Analytics = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
         <div className="text-center sm:text-left">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Analytics</h2>
-          <p className="text-sm md:text-base text-slate-500 font-medium">Track your campaign performance and ROI.</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Analytics</h2>
+          <p className="text-sm md:text-base text-muted-foreground font-medium">Track your campaign performance and ROI.</p>
         </div>
         <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none px-4 md:px-6 py-3 glass rounded-xl text-slate-600 font-bold flex items-center justify-center gap-2 hover:bg-muted transition-all text-sm">
+          <button className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-card border border-border rounded-xl text-muted-foreground font-bold flex items-center justify-center gap-2 hover:bg-muted transition-all text-sm">
             <Calendar size={18} /> <span className="hidden xs:inline">Last 30 Days</span><span className="xs:hidden">30 Days</span>
           </button>
-          <button className="flex-1 sm:flex-none px-4 md:px-6 py-3 glass rounded-xl text-slate-600 font-bold flex items-center justify-center gap-2 hover:bg-muted transition-all text-sm">
+          <button className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-card border border-border rounded-xl text-muted-foreground font-bold flex items-center justify-center gap-2 hover:bg-muted transition-all text-sm">
             <Filter size={18} /> Filter
           </button>
         </div>
@@ -127,17 +127,17 @@ export const Analytics = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Main Performance Chart */}
-        <div className="lg:col-span-2 glass p-5 md:p-8 rounded-[32px] md:rounded-[40px] border-border/40 space-y-6 md:space-y-8">
+        <div className="lg:col-span-2 bg-card p-5 md:p-8 rounded-[32px] md:rounded-[40px] border border-border space-y-6 md:space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="text-lg md:text-xl font-bold text-slate-800">Campaign Performance</h3>
+            <h3 className="text-lg md:text-xl font-bold text-foreground">Campaign Performance</h3>
             <div className="flex items-center gap-4 md:gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-primary" />
-                <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Sent</span>
+                <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">Sent</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-purple-500" />
-                <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Replies</span>
+                <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">Replies</span>
               </div>
             </div>
           </div>
@@ -154,28 +154,30 @@ export const Analytics = () => {
                     <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 600 }}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }}
                   dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 600 }}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }}
                 />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#FFFFFF', 
+                    backgroundColor: 'hsl(var(--card))', 
                     borderRadius: '12px', 
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid hsl(var(--border))',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                     fontWeight: 'bold',
-                    fontSize: '12px'
+                    fontSize: '12px',
+                    color: 'hsl(var(--foreground))'
                   }}
+                  itemStyle={{ color: 'hsl(var(--foreground))' }}
                 />
                 <Area 
                   type="monotone" 
@@ -200,7 +202,7 @@ export const Analytics = () => {
 
         {/* Distribution Chart */}
         <div className="glass p-5 md:p-8 rounded-[32px] md:rounded-[40px] border-border/40 space-y-6 md:space-y-8">
-          <h3 className="text-lg md:text-xl font-bold text-slate-800">Lead Distribution</h3>
+          <h3 className="text-lg md:text-xl font-bold text-foreground">Lead Distribution</h3>
           <div className="h-[200px] md:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -231,9 +233,9 @@ export const Analytics = () => {
               <div key={label} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style={{ backgroundColor: COLORS[i] }} />
-                  <span className="text-xs md:text-sm font-bold text-slate-600">{label}</span>
+                  <span className="text-xs md:text-sm font-bold text-muted-foreground">{label}</span>
                 </div>
-                <span className="text-xs md:text-sm font-bold text-slate-800">{[40, 30, 20, 10][i]}%</span>
+                <span className="text-xs md:text-sm font-bold text-foreground">{[40, 30, 20, 10][i]}%</span>
               </div>
             ))}
           </div>
@@ -243,7 +245,7 @@ export const Analytics = () => {
       {/* Campaign Performance Table */}
       <div className="glass rounded-[24px] md:rounded-[32px] border-border/40 overflow-hidden">
         <div className="p-5 md:p-8 border-b border-border/40 flex items-center justify-between">
-          <h3 className="text-lg md:text-xl font-bold text-slate-800">Campaign Performance</h3>
+          <h3 className="text-lg md:text-xl font-bold text-foreground">Campaign Performance</h3>
           <button className="text-xs md:text-sm font-bold text-primary flex items-center gap-2">
             Export <span className="hidden sm:inline">Report</span> <ExternalLink size={16} />
           </button>
@@ -251,7 +253,7 @@ export const Analytics = () => {
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left min-w-[600px]">
             <thead>
-              <tr className="bg-muted/50 text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+              <tr className="bg-muted/50 text-muted-foreground text-[10px] md:text-xs font-bold uppercase tracking-wider">
                 <th className="px-5 md:px-8 py-4">Campaign Name</th>
                 <th className="px-5 md:px-8 py-4">Sent</th>
                 <th className="px-5 md:px-8 py-4">Opened</th>
@@ -262,7 +264,7 @@ export const Analytics = () => {
             <tbody className="divide-y divide-border/40">
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-8 py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={5} className="px-8 py-12 text-center text-muted-foreground font-medium">
                     No campaigns found to analyze.
                   </td>
                 </tr>
@@ -275,10 +277,10 @@ export const Analytics = () => {
 
                   return (
                     <tr key={campaign.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 md:px-8 py-4 font-bold text-sm md:text-base text-slate-800">{campaign.name}</td>
-                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{sent}</td>
-                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{opened}</td>
-                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-slate-500 font-medium">{replied}</td>
+                      <td className="px-5 md:px-8 py-4 font-bold text-sm md:text-base text-foreground">{campaign.name}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-muted-foreground font-medium">{sent}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-muted-foreground font-medium">{opened}</td>
+                      <td className="px-5 md:px-8 py-4 text-xs md:text-sm text-muted-foreground font-medium">{replied}</td>
                       <td className="px-5 md:px-8 py-4">
                         <div className="flex items-center gap-2">
                           <span className="text-emerald-600 font-bold text-xs md:text-sm">{rate}</span>

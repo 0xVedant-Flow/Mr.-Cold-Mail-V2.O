@@ -227,3 +227,10 @@ CREATE TRIGGER on_auth_user_created
 -- Seed: Set admin role for the owner
 -- Replace 'theswagotom@gmail.com' with the actual owner email
 UPDATE public.users SET role = 'admin' WHERE email = 'theswagotom@gmail.com';
+
+-- Seed default plans
+INSERT INTO public.plans (id, name, description, price, credits, features)
+VALUES 
+  ('free', 'Free', 'Perfect for testing the waters', 0, 10, '["10 AI Emails/mo", "1 Campaign", "Basic Support"]'),
+  ('pro', 'Pro', 'For serious cold emailers', 29, 250, '["250 AI Emails/mo", "Unlimited Campaigns", "Priority Support", "Email Tracking"]'),
+  ('agency', 'Agency', 'Scale your outreach', 99, 1000, '["1000 AI Emails/mo", "Unlimited Campaigns", "24/7 Support", "White-label Reports"]');

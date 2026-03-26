@@ -163,18 +163,18 @@ export const EmailEditor = () => {
         <div className="p-4 md:p-6 border-b border-border/40 space-y-4">
           <button 
             onClick={() => navigate('/campaigns')}
-            className="text-slate-400 hover:text-primary transition-colors flex items-center gap-2 text-[10px] md:text-xs font-bold uppercase tracking-widest"
+            className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 text-[10px] md:text-xs font-bold uppercase tracking-widest"
           >
             <ArrowLeft size={14} /> Back to Campaigns
           </button>
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={16} />
             <input 
               type="text" 
               placeholder="Search leads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-muted rounded-xl border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold text-slate-800 transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-muted rounded-xl border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold text-foreground transition-all"
             />
           </div>
         </div>
@@ -205,7 +205,7 @@ export const EmailEditor = () => {
                     <div className="font-bold text-sm truncate w-32 md:w-40">{lead.name}</div>
                     <div className={cn(
                       "text-[10px] font-bold uppercase tracking-widest truncate",
-                      activeLeadId === lead.id ? "text-white/60" : "text-slate-400"
+                      activeLeadId === lead.id ? "text-white/60" : "text-muted-foreground"
                     )}>
                       {lead.company || 'No Company'}
                     </div>
@@ -241,7 +241,7 @@ export const EmailEditor = () => {
                 <div className="flex items-center gap-3 md:gap-6 overflow-hidden">
                   <button 
                     onClick={() => setShowLeadsList(true)}
-                    className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-primary transition-colors"
+                    className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-primary transition-colors"
                   >
                     <ArrowLeft size={20} />
                   </button>
@@ -249,13 +249,13 @@ export const EmailEditor = () => {
                     <User size={24} className="md:w-8 md:h-8" />
                   </div>
                   <div className="truncate">
-                    <h3 className="text-lg md:text-2xl font-bold text-slate-800 truncate">{activeLead.name}</h3>
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground truncate">{activeLead.name}</h3>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1">
-                      <span className="flex items-center gap-1.5 text-[10px] md:text-sm font-bold text-slate-500 truncate">
+                      <span className="flex items-center gap-1.5 text-[10px] md:text-sm font-bold text-muted-foreground truncate">
                         <Mail size={12} className="text-primary" /> {activeLead.email}
                       </span>
                       {activeLead.company && (
-                        <span className="flex items-center gap-1.5 text-[10px] md:text-sm font-bold text-slate-500 truncate">
+                        <span className="flex items-center gap-1.5 text-[10px] md:text-sm font-bold text-muted-foreground truncate">
                           <Building2 size={12} className="text-primary" /> {activeLead.company}
                         </span>
                       )}
@@ -263,10 +263,10 @@ export const EmailEditor = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                  <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-slate-600">
+                  <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-muted-foreground">
                     <RefreshCw size={18} className="md:w-5 md:h-5" />
                   </button>
-                  <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-slate-600">
+                  <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-muted-foreground">
                     <MoreVertical size={18} className="md:w-5 md:h-5" />
                   </button>
                 </div>
@@ -277,14 +277,14 @@ export const EmailEditor = () => {
                 {activeEmail ? (
                   <div className="space-y-6 md:space-y-8">
                     <div className="space-y-2 md:space-y-3">
-                      <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400">Subject Line</label>
-                      <div className="p-4 md:p-6 bg-muted rounded-2xl font-bold text-slate-800 text-base md:text-lg border-none">
+                      <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground">Subject Line</label>
+                      <div className="p-4 md:p-6 bg-muted rounded-2xl font-bold text-foreground text-base md:text-lg border-none">
                         {activeEmail.subject}
                       </div>
                     </div>
                     <div className="space-y-2 md:space-y-3">
-                      <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400">Personalized Message</label>
-                      <div className="p-5 md:p-8 bg-muted rounded-[24px] md:rounded-[32px] font-medium text-slate-700 leading-relaxed text-base md:text-lg whitespace-pre-wrap italic">
+                      <label className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground">Personalized Message</label>
+                      <div className="p-5 md:p-8 bg-muted rounded-[24px] md:rounded-[32px] font-medium text-muted-foreground leading-relaxed text-base md:text-lg whitespace-pre-wrap italic">
                         {activeEmail.body}
                       </div>
                     </div>
@@ -296,8 +296,8 @@ export const EmailEditor = () => {
                       <Sparkles size={32} className="text-primary animate-pulse md:w-12 md:h-12" />
                     </div>
                     <div className="max-w-sm px-4">
-                      <h4 className="text-lg md:text-xl font-bold text-slate-800">Generating Magic...</h4>
-                      <p className="text-sm md:text-base text-slate-500 font-medium mt-2">Our AI is crafting a perfectly personalized email for {activeLead.name}.</p>
+                      <h4 className="text-lg md:text-xl font-bold text-foreground">Generating Magic...</h4>
+                      <p className="text-sm md:text-base text-muted-foreground font-medium mt-2">Our AI is crafting a perfectly personalized email for {activeLead.name}.</p>
                     </div>
                   </div>
                 )}
@@ -307,7 +307,7 @@ export const EmailEditor = () => {
               <div className="p-4 md:p-8 border-t border-border/40 bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <button 
                   onClick={handleCopy}
-                  className="w-full sm:w-auto px-6 py-4 rounded-2xl glass hover:bg-white transition-all font-bold text-slate-600 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-4 rounded-2xl glass hover:bg-white transition-all font-bold text-muted-foreground flex items-center justify-center gap-2"
                 >
                   {isCopied ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />} 
                   {isCopied ? 'Copied!' : 'Copy to Clipboard'}
@@ -327,12 +327,12 @@ export const EmailEditor = () => {
             </motion.div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 md:p-12 space-y-6">
-              <div className="w-20 h-20 md:w-24 md:h-24 bg-muted rounded-full flex items-center justify-center text-slate-300">
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-muted rounded-full flex items-center justify-center text-muted-foreground/30">
                 <Users size={40} className="md:w-12 md:h-12" />
               </div>
               <div className="max-w-xs">
-                <h4 className="text-lg md:text-xl font-bold text-slate-800">Select a Lead</h4>
-                <p className="text-sm md:text-base text-slate-500 font-medium mt-2">Choose a lead from the sidebar to view their personalized email.</p>
+                <h4 className="text-lg md:text-xl font-bold text-foreground">Select a Lead</h4>
+                <p className="text-sm md:text-base text-muted-foreground font-medium mt-2">Choose a lead from the sidebar to view their personalized email.</p>
               </div>
             </div>
           )}

@@ -180,20 +180,20 @@ export const Leads = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">All Leads</h2>
-          <p className="text-sm md:text-base text-slate-500 font-medium">Manage all your prospects across all campaigns.</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">All Leads</h2>
+          <p className="text-sm md:text-base text-muted-foreground font-medium">Manage all your prospects across all campaigns.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowUploadModal(true)}
-            className="px-6 py-3 bg-white border border-border/40 text-slate-600 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-muted transition-all"
+            className="px-6 py-3 bg-card border border-border text-muted-foreground rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-muted transition-all"
           >
             <Upload size={18} />
             Import CSV
           </button>
           <button 
             onClick={() => setShowBulkModal(true)}
-            className="px-6 py-3 bg-primary text-white rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
           >
             <Sparkles size={18} />
             Bulk Generate
@@ -207,31 +207,31 @@ export const Leads = () => {
       {/* Filters & Search */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
           <input 
             type="text" 
             placeholder="Search by name, email, or company..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-border/40 rounded-2xl focus:ring-2 focus:ring-primary/20 transition-all font-medium text-slate-800"
+            className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-2xl focus:ring-2 focus:ring-primary/20 transition-all font-medium text-foreground"
           />
         </div>
-        <button className="px-6 py-3 bg-white border border-border/40 rounded-2xl font-bold text-slate-600 flex items-center justify-center gap-2 hover:bg-muted transition-all">
+        <button className="px-6 py-3 bg-card border border-border rounded-2xl font-bold text-muted-foreground flex items-center justify-center gap-2 hover:bg-muted transition-all">
           <Filter size={18} /> Filter
         </button>
       </div>
 
       {/* Leads List */}
-      <div className="glass rounded-[32px] md:rounded-[40px] border-border/40 overflow-hidden">
+      <div className="bg-card rounded-[32px] md:rounded-[40px] border border-border/40 overflow-hidden shadow-xl shadow-foreground/5">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border/40 bg-muted/30">
-                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">Lead</th>
-                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell">Company</th>
-                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest hidden lg:table-cell">Campaign</th>
-                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest hidden xl:table-cell">Date Added</th>
-                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">Lead</th>
+                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:table-cell">Company</th>
+                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest hidden lg:table-cell">Campaign</th>
+                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest hidden xl:table-cell">Date Added</th>
+                <th className="px-6 py-4 text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -251,16 +251,16 @@ export const Leads = () => {
                           {lead.name.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-800 truncate text-sm md:text-base">{lead.name}</div>
-                          <div className="text-[10px] md:text-xs text-slate-400 font-medium truncate flex items-center gap-1">
+                          <div className="font-bold text-foreground truncate text-sm md:text-base">{lead.name}</div>
+                          <div className="text-[10px] md:text-xs text-muted-foreground font-medium truncate flex items-center gap-1">
                             <Mail size={10} /> {lead.email}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 hidden sm:table-cell">
-                      <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                        <Building2 size={14} className="text-slate-400" />
+                      <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                        <Building2 size={14} className="text-muted-foreground/80" />
                         {lead.company || '—'}
                       </div>
                     </td>
@@ -274,7 +274,7 @@ export const Leads = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 hidden xl:table-cell">
-                      <div className="text-xs font-bold text-slate-400">
+                      <div className="text-xs font-bold text-muted-foreground">
                         {new Date(lead.created_at).toLocaleDateString()}
                       </div>
                     </td>
@@ -282,12 +282,12 @@ export const Leads = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => navigate(`/campaigns/${lead.campaign_id}`)}
-                          className="p-2 text-slate-400 hover:text-primary transition-all rounded-lg hover:bg-primary/5"
+                          className="p-2 text-muted-foreground hover:text-primary transition-all rounded-lg hover:bg-primary/5"
                           title="View Campaign"
                         >
                           <ChevronRight size={18} />
                         </button>
-                        <button className="p-2 text-slate-400 hover:text-destructive transition-all rounded-lg hover:bg-destructive/5">
+                        <button className="p-2 text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -301,11 +301,11 @@ export const Leads = () => {
         
         {filteredLeads.length === 0 && (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground/30">
               <Users size={32} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">No leads found</h3>
-            <p className="text-sm text-slate-500 font-medium">Try adjusting your search or upload more leads.</p>
+            <h3 className="text-lg font-bold text-foreground">No leads found</h3>
+            <p className="text-sm text-muted-foreground font-medium">Try adjusting your search or upload more leads.</p>
           </div>
         )}
       </div>
@@ -313,12 +313,12 @@ export const Leads = () => {
       {/* Bulk Generate Modal */}
       <AnimatePresence>
         {showBulkModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass w-full max-w-lg rounded-[32px] border-white/20 shadow-2xl overflow-hidden"
+              className="bg-card w-full max-w-lg rounded-[32px] border border-border shadow-2xl overflow-hidden"
             >
               <div className="p-6 md:p-8 space-y-6">
                 <div className="flex items-center justify-between">
@@ -327,13 +327,13 @@ export const Leads = () => {
                       <Sparkles size={20} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">Bulk Generate</h3>
-                      <p className="text-sm text-slate-500">Create emails for an entire campaign.</p>
+                      <h3 className="text-xl font-bold text-foreground">Bulk Generate</h3>
+                      <p className="text-sm text-muted-foreground">Create emails for an entire campaign.</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setShowBulkModal(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 rounded-lg transition-all"
+                    className="p-2 text-muted-foreground hover:text-foreground rounded-lg transition-all"
                   >
                     <X size={20} />
                   </button>
@@ -341,13 +341,14 @@ export const Leads = () => {
 
                 <form onSubmit={handleBulkGenerate} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Select Campaign</label>
+                    <label className="text-sm font-semibold text-foreground/80">Select Campaign</label>
                     <select 
                       value={bulkData.campaignId}
                       onChange={(e) => setBulkData(prev => ({ ...prev, campaignId: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       required
                     >
+                      <option value="">Select a campaign</option>
                       {campaigns.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
@@ -355,40 +356,40 @@ export const Leads = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <Target size={14} /> Your Offer
+                    <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                      <Target size={14} className="text-primary" /> Your Offer
                     </label>
                     <textarea
                       value={bulkData.offer}
                       onChange={(e) => setBulkData(prev => ({ ...prev, offer: e.target.value }))}
                       placeholder="What are you selling?"
                       rows={3}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                        <Sparkles size={14} /> Tone
+                      <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                        <Sparkles size={14} className="text-primary" /> Tone
                       </label>
                       <select
                         value={bulkData.tone}
                         onChange={(e) => setBulkData(prev => ({ ...prev, tone: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       >
                         {['Professional', 'Friendly', 'Casual', 'Direct', 'Witty', 'Urgent'].map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                        <MessageSquare size={14} /> Goal
+                      <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+                        <MessageSquare size={14} className="text-primary" /> Goal
                       </label>
                       <select
                         value={bulkData.goal}
                         onChange={(e) => setBulkData(prev => ({ ...prev, goal: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       >
                         {['Book a Meeting', 'Get a Reply', 'Free Demo', 'Close Deal', 'Feedback'].map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
@@ -398,14 +399,14 @@ export const Leads = () => {
                   {bulkError && (
                     <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive text-sm">
                       <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                      <p>{bulkError}</p>
+                      <p className="font-bold">{bulkError}</p>
                     </div>
                   )}
 
                   {bulkSuccess && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-emerald-600 text-sm">
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-3 text-emerald-500 text-sm">
                       <Check size={18} className="shrink-0 mt-0.5" />
-                      <p>{bulkSuccess}</p>
+                      <p className="font-bold">{bulkSuccess}</p>
                     </div>
                   )}
 
@@ -414,7 +415,7 @@ export const Leads = () => {
                     disabled={bulkLoading}
                     className={cn(
                       "w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all",
-                      bulkLoading ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-primary/90 shadow-primary/20"
+                      bulkLoading ? "bg-muted-foreground/50 cursor-not-allowed" : "bg-primary hover:bg-primary/90 shadow-primary/20"
                     )}
                   >
                     {bulkLoading ? (
@@ -439,12 +440,12 @@ export const Leads = () => {
       {/* Upload CSV Modal */}
       <AnimatePresence>
         {showUploadModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass w-full max-w-lg rounded-[32px] border-white/20 shadow-2xl overflow-hidden"
+              className="bg-card w-full max-w-lg rounded-[32px] border border-border shadow-2xl overflow-hidden"
             >
               <div className="p-6 md:p-8 space-y-6">
                 <div className="flex items-center justify-between">
@@ -453,13 +454,13 @@ export const Leads = () => {
                       <Upload size={20} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">Import Leads</h3>
-                      <p className="text-sm text-slate-500">Upload a CSV file to add leads.</p>
+                      <h3 className="text-xl font-bold text-foreground">Import Leads</h3>
+                      <p className="text-sm text-muted-foreground">Upload a CSV file to add leads.</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setShowUploadModal(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 rounded-lg transition-all"
+                    className="p-2 text-muted-foreground hover:text-foreground rounded-lg transition-all"
                   >
                     <X size={20} />
                   </button>
@@ -467,13 +468,14 @@ export const Leads = () => {
 
                 <form onSubmit={handleCsvUpload} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Select Campaign</label>
+                    <label className="text-sm font-semibold text-foreground/80">Select Campaign</label>
                     <select 
                       value={uploadData.campaignId}
                       onChange={(e) => setUploadData(prev => ({ ...prev, campaignId: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       required
                     >
+                      <option value="">Select a campaign</option>
                       {campaigns.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
@@ -481,11 +483,11 @@ export const Leads = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">CSV File</label>
+                    <label className="text-sm font-semibold text-foreground/80">CSV File</label>
                     <div 
                       className={cn(
                         "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer",
-                        selectedFile ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50 hover:bg-slate-50"
+                        selectedFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"
                       )}
                       onClick={() => document.getElementById('csv-input')?.click()}
                     >
@@ -499,8 +501,8 @@ export const Leads = () => {
                       {selectedFile ? (
                         <div className="flex flex-col items-center gap-2">
                           <FileText size={32} className="text-primary" />
-                          <div className="font-bold text-slate-800">{selectedFile.name}</div>
-                          <div className="text-xs text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</div>
+                          <div className="font-bold text-foreground">{selectedFile.name}</div>
+                          <div className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</div>
                           <button 
                             type="button"
                             onClick={(e) => {
@@ -514,9 +516,9 @@ export const Leads = () => {
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-2">
-                          <Upload size={32} className="text-slate-300" />
-                          <div className="font-bold text-slate-600">Click to upload or drag and drop</div>
-                          <div className="text-xs text-slate-400">CSV files only (Max 10MB)</div>
+                          <Upload size={32} className="text-muted-foreground/30" />
+                          <div className="font-bold text-muted-foreground">Click to upload or drag and drop</div>
+                          <div className="text-xs text-muted-foreground/60">CSV files only (Max 10MB)</div>
                         </div>
                       )}
                     </div>
@@ -525,14 +527,14 @@ export const Leads = () => {
                   {uploadError && (
                     <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive text-sm">
                       <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                      <p>{uploadError}</p>
+                      <p className="font-bold">{uploadError}</p>
                     </div>
                   )}
 
                   {uploadSuccess && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-emerald-600 text-sm">
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-3 text-emerald-500 text-sm">
                       <Check size={18} className="shrink-0 mt-0.5" />
-                      <p>{uploadSuccess}</p>
+                      <p className="font-bold">{uploadSuccess}</p>
                     </div>
                   )}
 
@@ -541,7 +543,7 @@ export const Leads = () => {
                     disabled={uploadLoading || !selectedFile}
                     className={cn(
                       "w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all",
-                      (uploadLoading || !selectedFile) ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-primary/90 shadow-primary/20"
+                      (uploadLoading || !selectedFile) ? "bg-muted-foreground/50 cursor-not-allowed" : "bg-primary hover:bg-primary/90 shadow-primary/20"
                     )}
                   >
                     {uploadLoading ? (

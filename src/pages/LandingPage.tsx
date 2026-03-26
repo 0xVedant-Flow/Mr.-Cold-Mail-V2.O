@@ -30,26 +30,26 @@ const Nav = () => {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
             <span className="text-white font-bold">❄</span>
           </div>
-          <span className="font-bold text-lg md:text-xl tracking-tight text-slate-800">Mr. Cold Mail</span>
+          <span className="font-bold text-lg md:text-xl tracking-tight text-foreground">Mr. Cold Mail</span>
         </div>
         
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Features</a>
-          <a href="#how-it-works" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">How it Works</a>
-          <a href="#pricing" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Pricing</a>
+          <a href="#features" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Features</a>
+          <a href="#how-it-works" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">How it Works</a>
+          <a href="#pricing" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Pricing</a>
         </div>
 
         <div className="flex items-center gap-3 md:gap-4">
-          <Link to="/login" className="hidden sm:block text-sm font-bold text-slate-600 hover:text-primary transition-colors">Log In</Link>
-          <Link to="/signup" className="bg-primary hover:bg-primary/90 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-primary/20 transition-all">
+          <Link to="/login" className="hidden sm:block text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Log In</Link>
+          <Link to="/signup" className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-primary/20 transition-all">
             Start Free
           </Link>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-slate-600"
+            className="md:hidden p-2 text-muted-foreground"
           >
-            {isOpen ? <XCircle size={24} /> : <div className="space-y-1.5"><div className="w-6 h-0.5 bg-slate-600 rounded-full" /><div className="w-6 h-0.5 bg-slate-600 rounded-full" /><div className="w-6 h-0.5 bg-slate-600 rounded-full" /></div>}
+            {isOpen ? <XCircle size={24} /> : <div className="space-y-1.5"><div className="w-6 h-0.5 bg-foreground rounded-full" /><div className="w-6 h-0.5 bg-foreground rounded-full" /><div className="w-6 h-0.5 bg-foreground rounded-full" /></div>}
           </button>
         </div>
       </div>
@@ -63,10 +63,10 @@ const Nav = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden border-t border-border/40 mt-4 py-4 space-y-4 overflow-hidden"
           >
-            <a href="#features" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-slate-600 px-2">Features</a>
-            <a href="#how-it-works" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-slate-600 px-2">How it Works</a>
-            <a href="#pricing" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-slate-600 px-2">Pricing</a>
-            <Link to="/login" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-slate-600 px-2">Log In</Link>
+            <a href="#features" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-muted-foreground px-2">Features</a>
+            <a href="#how-it-works" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-muted-foreground px-2">How it Works</a>
+            <a href="#pricing" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-muted-foreground px-2">Pricing</a>
+            <Link to="/login" onClick={() => setIsOpen(false)} className="block text-sm font-bold text-muted-foreground px-2">Log In</Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -75,7 +75,7 @@ const Nav = () => {
 };
 
 const Hero = () => (
-  <section className="relative pt-32 md:pt-48 pb-20 md:pb-32 px-4 md:px-6 overflow-hidden bg-slate-950">
+  <section className="relative pt-32 md:pt-48 pb-20 md:pb-32 px-4 md:px-6 overflow-hidden bg-background">
     {/* Animated Background Elements */}
     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none">
       <motion.div 
@@ -94,7 +94,7 @@ const Hero = () => (
           opacity: [0.1, 0.15, 0.1]
         }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px]" 
+        className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" 
       />
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
     </div>
@@ -124,7 +124,7 @@ const Hero = () => (
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8 }}
-            className="text-lg md:text-2xl text-slate-400 font-medium max-w-xl leading-relaxed"
+            className="text-lg md:text-2xl text-muted-foreground font-medium max-w-xl leading-relaxed"
           >
             Stop wasting hours on manual research. Our AI crafts deeply personalized, high-converting cold emails in seconds.
           </motion.p>
@@ -155,12 +155,12 @@ const Hero = () => (
                   <img 
                     key={i}
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`} 
-                    className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-800"
+                    className="w-8 h-8 rounded-full border-2 border-background bg-muted"
                     alt="user"
                   />
                 ))}
               </div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Trusted by 500+ Founders
               </p>
             </div>
@@ -182,8 +182,8 @@ const Hero = () => (
                       <Sparkles className="text-white" size={20} />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">AI Generator</div>
-                      <div className="text-sm font-bold text-white">Crafting your message...</div>
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">AI Generator</div>
+                      <div className="text-sm font-bold text-foreground">Crafting your message...</div>
                     </div>
                   </div>
                   <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/20">
@@ -210,7 +210,7 @@ const Hero = () => (
                 </div>
 
                 <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
-                  <p className="text-sm text-slate-300 font-medium leading-relaxed italic">
+                  <p className="text-sm text-muted-foreground font-medium leading-relaxed italic">
                     "Hey Sarah, I saw your recent post about scaling engineering teams. Your point about 'culture-first' hiring really resonated..."
                   </p>
                 </div>
@@ -219,7 +219,7 @@ const Hero = () => (
                   <div className="flex-1 h-12 bg-primary/20 rounded-xl border border-primary/30 flex items-center justify-center text-primary font-bold text-sm">
                     Personalizing
                   </div>
-                  <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-slate-400">
+                  <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-muted-foreground">
                     <Target size={20} />
                   </div>
                 </div>
@@ -236,7 +236,7 @@ const Hero = () => (
                 <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="text-white" size={16} />
                 </div>
-                <div className="text-xs font-bold text-white">Reply Rate +45%</div>
+                <div className="text-xs font-bold text-foreground">Reply Rate +45%</div>
               </div>
             </motion.div>
 
@@ -246,10 +246,10 @@ const Hero = () => (
               className="absolute -bottom-10 -left-10 glass p-4 rounded-2xl border-white/10 shadow-2xl bg-white/10 backdrop-blur-xl"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <Zap className="text-white" size={16} />
                 </div>
-                <div className="text-xs font-bold text-white">10x Faster</div>
+                <div className="text-xs font-bold text-foreground">10x Faster</div>
               </div>
             </motion.div>
           </div>
@@ -271,11 +271,11 @@ const Problem = () => (
           >
             <XCircle size={14} /> The Problem
           </motion.div>
-          <h2 className="text-4xl md:text-6xl font-bold text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight leading-tight">
             The Old Way of <br />
-            <span className="text-slate-400">Outreach is Dead.</span>
+            <span className="text-muted-foreground/60">Outreach is Dead.</span>
           </h2>
-          <p className="text-xl text-slate-500 font-medium leading-relaxed">
+          <p className="text-xl text-muted-foreground font-medium leading-relaxed">
             Prospects are tired of generic templates. If your email looks like a mass-blast, it's going straight to the trash.
           </p>
           
@@ -290,14 +290,14 @@ const Problem = () => (
                 whileInView={{ opacity: 1, y: 0 }}
                 initial={{ opacity: 0, y: 20 }}
                 transition={{ delay: i * 0.1 }}
-                className="flex gap-4 p-6 rounded-3xl hover:bg-slate-50 transition-colors group"
+                className="flex gap-4 p-6 rounded-3xl hover:bg-muted transition-colors group"
               >
-                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-red-500/10 group-hover:text-red-500 transition-colors">
+                <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center text-muted-foreground group-hover:bg-red-500/10 group-hover:text-red-500 transition-colors">
                   <item.icon size={24} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
-                  <p className="text-slate-500 font-medium">{item.desc}</p>
+                  <h3 className="text-lg font-bold text-foreground">{item.title}</h3>
+                  <p className="text-muted-foreground font-medium">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -306,17 +306,17 @@ const Problem = () => (
         
         <div className="relative">
           <div className="absolute inset-0 bg-red-500/5 rounded-[48px] blur-3xl" />
-          <div className="relative glass p-10 rounded-[48px] border-slate-200 shadow-2xl bg-white">
+          <div className="relative glass p-10 rounded-[48px] border-border shadow-2xl bg-card">
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                <div className="font-bold text-slate-900">Outbox (Traditional)</div>
+              <div className="flex items-center justify-between border-b border-border pb-6">
+                <div className="font-bold text-foreground">Outbox (Traditional)</div>
                 <div className="text-red-500 font-bold text-sm">98% Unopened</div>
               </div>
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 opacity-50">
-                    <div className="h-2 bg-slate-200 rounded-full w-1/2 mb-2" />
-                    <div className="h-2 bg-slate-200 rounded-full w-full" />
+                  <div key={i} className="p-4 bg-muted rounded-2xl border border-border opacity-50">
+                    <div className="h-2 bg-muted-foreground/20 rounded-full w-1/2 mb-2" />
+                    <div className="h-2 bg-muted-foreground/20 rounded-full w-full" />
                   </div>
                 ))}
                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-center">
@@ -333,7 +333,7 @@ const Problem = () => (
 );
 
 const Solution = () => (
-  <section id="features" className="py-24 md:py-32 px-4 md:px-6 bg-slate-50 relative overflow-hidden">
+  <section id="features" className="py-24 md:py-32 px-4 md:px-6 bg-muted relative overflow-hidden">
     <div className="max-w-7xl mx-auto">
       <div className="text-center max-w-3xl mx-auto mb-20 space-y-6">
         <motion.div 
@@ -343,11 +343,11 @@ const Solution = () => (
         >
           <Sparkles size={14} /> The Solution
         </motion.div>
-        <h2 className="text-4xl md:text-6xl font-bold text-slate-900 tracking-tight">
+        <h2 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight">
           AI That Thinks Like a <br />
           <span className="text-primary">World-Class Salesperson.</span>
         </h2>
-        <p className="text-xl text-slate-500 font-medium">
+        <p className="text-xl text-muted-foreground font-medium">
           Mr. Cold Mail doesn't just write emails. It researches your leads, understands their business, and crafts a message they can't ignore.
         </p>
       </div>
@@ -358,7 +358,7 @@ const Solution = () => (
             title: "Smart Personalization", 
             desc: "AI analyzes lead data to write unique, relevant opening lines that build instant rapport.",
             icon: Target,
-            color: "bg-blue-500"
+            color: "bg-primary"
           },
           { 
             title: "Contextual Awareness", 
@@ -379,13 +379,13 @@ const Solution = () => (
             initial={{ opacity: 0, y: 30 }}
             transition={{ delay: i * 0.1 }}
             whileHover={{ y: -10 }}
-            className="glass p-10 rounded-[40px] border-slate-200 bg-white shadow-xl hover:shadow-2xl transition-all group"
+            className="glass p-10 rounded-[40px] border-border bg-card shadow-xl hover:shadow-2xl transition-all group"
           >
             <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-8 shadow-lg", feature.color)}>
               <feature.icon size={28} />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">{feature.title}</h3>
-            <p className="text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+            <h3 className="text-2xl font-bold text-foreground mb-4">{feature.title}</h3>
+            <p className="text-muted-foreground font-medium leading-relaxed">{feature.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -394,7 +394,7 @@ const Solution = () => (
 );
 
 const HowItWorks = () => (
-  <section id="how-it-works" className="py-24 md:py-32 px-4 md:px-6 bg-slate-900 text-white relative overflow-hidden">
+  <section id="how-it-works" className="py-24 md:py-32 px-4 md:px-6 bg-background text-foreground relative overflow-hidden">
     <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#4f46e5,transparent_70%)]" />
     </div>
@@ -402,7 +402,7 @@ const HowItWorks = () => (
     <div className="max-w-7xl mx-auto relative z-10">
       <div className="text-center mb-20 space-y-4">
         <h2 className="text-4xl md:text-6xl font-bold tracking-tight">How It Works</h2>
-        <p className="text-slate-400 text-xl font-medium">From lead list to booked calls in 3 simple steps.</p>
+        <p className="text-muted-foreground text-xl font-medium">From lead list to booked calls in 3 simple steps.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-16 relative">
@@ -436,15 +436,15 @@ const HowItWorks = () => (
             transition={{ delay: i * 0.2 }}
             className="relative group"
           >
-            <div className="text-8xl font-black text-white/5 absolute -top-10 -left-4 select-none group-hover:text-primary/10 transition-colors">
+            <div className="text-8xl font-black text-foreground/5 absolute -top-10 -left-4 select-none group-hover:text-primary/10 transition-colors">
               {step.step}
             </div>
             <div className="space-y-6 relative z-10">
-              <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 group-hover:scale-110 transition-transform">
+              <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 group-hover:scale-110 transition-transform text-white">
                 <step.icon size={32} />
               </div>
               <h3 className="text-2xl font-bold">{step.title}</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">{step.desc}</p>
+              <p className="text-muted-foreground text-lg leading-relaxed">{step.desc}</p>
             </div>
           </motion.div>
         ))}
@@ -454,10 +454,10 @@ const HowItWorks = () => (
 );
 
 const BeforeAfter = () => (
-  <section className="py-16 md:py-24 px-4 md:px-6">
+  <section className="py-16 md:py-24 px-4 md:px-6 bg-background">
     <div className="max-w-5xl mx-auto">
       <div className="text-center mb-12 md:mb-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Before vs After</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">Before vs After</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -465,20 +465,20 @@ const BeforeAfter = () => (
           <div className="flex items-center gap-2 text-destructive font-bold uppercase tracking-widest text-[10px] md:text-xs mb-6">
             <XCircle size={16} /> Before
           </div>
-          <div className="p-5 md:p-6 bg-white rounded-2xl shadow-sm text-slate-400 font-medium italic text-sm md:text-base">
+          <div className="p-5 md:p-6 bg-card rounded-2xl shadow-sm text-muted-foreground font-medium italic text-sm md:text-base">
             “Hi, I’m reaching out to offer my service…”
           </div>
-          <p className="mt-6 text-center font-bold text-slate-800">👉 Ignored.</p>
+          <p className="mt-6 text-center font-bold text-foreground">👉 Ignored.</p>
         </div>
         
         <div className="glass p-8 md:p-10 rounded-[32px] md:rounded-[40px] border-emerald-500/20 bg-emerald-500/5">
           <div className="flex items-center gap-2 text-emerald-600 font-bold uppercase tracking-widest text-[10px] md:text-xs mb-6">
             <CheckCircle2 size={16} /> After
           </div>
-          <div className="p-5 md:p-6 bg-white rounded-2xl shadow-sm text-slate-800 font-bold italic text-sm md:text-base">
+          <div className="p-5 md:p-6 bg-card rounded-2xl shadow-sm text-foreground font-bold italic text-sm md:text-base">
             “Hey John, noticed your company recently launched a new feature…”
           </div>
-          <p className="mt-6 text-center font-bold text-slate-800">👉 Gets replies.</p>
+          <p className="mt-6 text-center font-bold text-foreground">👉 Gets replies.</p>
         </div>
       </div>
     </div>
@@ -489,22 +489,22 @@ const Pricing = () => {
   const [isYearly, setIsYearly] = React.useState(true);
 
   return (
-    <section id="pricing" className="py-16 md:py-24 px-4 md:px-6 bg-slate-50">
+    <section id="pricing" className="py-16 md:py-24 px-4 md:px-6 bg-muted">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 md:mb-16 space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Simple, Affordable Pricing</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">Simple, Affordable Pricing</h2>
           <div className="flex items-center justify-center gap-4">
-            <span className={cn("text-xs md:text-sm font-bold", !isYearly ? "text-slate-900" : "text-slate-400")}>Monthly</span>
+            <span className={cn("text-xs md:text-sm font-bold", !isYearly ? "text-foreground" : "text-muted-foreground")}>Monthly</span>
             <button 
               onClick={() => setIsYearly(!isYearly)}
-              className="w-12 md:w-14 h-7 md:h-8 bg-slate-200 rounded-full p-1 transition-all relative"
+              className="w-12 md:w-14 h-7 md:h-8 bg-muted-foreground/20 rounded-full p-1 transition-all relative"
             >
               <div className={cn(
                 "w-5 h-5 md:w-6 md:h-6 bg-primary rounded-full transition-all shadow-sm",
                 isYearly ? "translate-x-5 md:translate-x-6" : "translate-x-0"
               )} />
             </button>
-            <span className={cn("text-xs md:text-sm font-bold flex items-center gap-2", isYearly ? "text-slate-900" : "text-slate-400")}>
+            <span className={cn("text-xs md:text-sm font-bold flex items-center gap-2", isYearly ? "text-foreground" : "text-muted-foreground")}>
               Yearly <span className="bg-emerald-500 text-white text-[8px] md:text-[10px] px-2 py-0.5 rounded-full shrink-0">SAVE BIG</span>
             </span>
           </div>
@@ -514,25 +514,25 @@ const Pricing = () => {
           {/* Pro Plan */}
           <motion.div 
             whileHover={{ y: -10, rotateX: 2, rotateY: -2 }}
-            className="glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-border/40 flex flex-col bg-white shadow-xl transition-all"
+            className="glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-border bg-card shadow-xl transition-all"
           >
             <div className="mb-8">
-              <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Pro Plan</div>
-              <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-4">💼 Mr. Cold Mail Pro</h3>
+              <div className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Pro Plan</div>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-4">💼 Mr. Cold Mail Pro</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-slate-900">{isYearly ? '$17' : '$29'}</span>
-                <span className="text-slate-500 font-medium text-sm md:text-base">/mo</span>
+                <span className="text-4xl md:text-5xl font-bold text-foreground">{isYearly ? '$17' : '$29'}</span>
+                <span className="text-muted-foreground font-medium text-sm md:text-base">/mo</span>
               </div>
               {isYearly && <p className="text-emerald-600 text-xs md:text-sm font-bold mt-2">🔥 Limited Offer</p>}
             </div>
             <div className="space-y-4 mb-10 flex-1">
               {['AI personalized emails', 'Bulk generation', 'Export emails', 'Basic analytics'].map((f, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm md:text-base text-slate-600 font-medium">
+                <div key={i} className="flex items-center gap-3 text-sm md:text-base text-muted-foreground font-medium">
                   <CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> {f}
                 </div>
               ))}
             </div>
-            <Link to="/signup" className="w-full py-4 md:py-5 rounded-2xl bg-slate-800 text-white font-bold text-center hover:bg-slate-900 transition-all text-sm md:text-base">
+            <Link to="/signup" className="w-full py-4 md:py-5 rounded-2xl bg-foreground text-background font-bold text-center hover:bg-foreground/90 transition-all text-sm md:text-base">
               Start Free → Upgrade Anytime
             </Link>
           </motion.div>
@@ -540,23 +540,23 @@ const Pricing = () => {
           {/* Agency Plan */}
           <motion.div 
             whileHover={{ y: -10, rotateX: 2, rotateY: 2 }}
-            className="glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-primary/40 shadow-2xl shadow-primary/5 relative md:scale-105 z-10 flex flex-col bg-white transition-all"
+            className="glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-primary/40 shadow-2xl shadow-primary/5 relative md:scale-105 z-10 flex flex-col bg-card transition-all"
           >
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-4 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/20 whitespace-nowrap">
               <Sparkles size={12} /> 🔥 Best Value
             </div>
             <div className="mb-8">
               <div className="text-[10px] md:text-xs font-bold text-primary uppercase tracking-widest mb-2">Agency Plan</div>
-              <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-4">🚀 Agency</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-4">🚀 Agency</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-slate-900">{isYearly ? '$41' : '$69'}</span>
-                <span className="text-slate-500 font-medium text-sm md:text-base">/mo</span>
+                <span className="text-4xl md:text-5xl font-bold text-foreground">{isYearly ? '$41' : '$69'}</span>
+                <span className="text-muted-foreground font-medium text-sm md:text-base">/mo</span>
               </div>
               {isYearly && <p className="text-primary text-xs md:text-sm font-bold mt-2">⚡ LIMITED DEAL</p>}
             </div>
             <div className="space-y-4 mb-10 flex-1">
               {['Everything in Pro', 'Unlimited email generation', 'Team access', 'Advanced AI personalization', 'Priority support'].map((f, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm md:text-base text-slate-600 font-medium">
+                <div key={i} className="flex items-center gap-3 text-sm md:text-base text-muted-foreground font-medium">
                   <CheckCircle2 size={18} className="text-primary shrink-0" /> {f}
                 </div>
               ))}
@@ -572,21 +572,21 @@ const Pricing = () => {
 };
 
 const Testimonials = () => (
-  <section className="py-16 md:py-24 px-4 md:px-6">
+  <section className="py-16 md:py-24 px-4 md:px-6 bg-background">
     <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         {[
           { text: "Got 3 replies in 1 day after switching to Mr. Cold Mail. Insane.", author: "Founder @ TechFlow" },
           { text: "Saved me hours of writing. AI actually works.", author: "Freelance Designer" }
         ].map((t, i) => (
-          <div key={i} className="glass p-8 md:p-10 rounded-[32px] md:rounded-[40px] border-border/40 relative">
+          <div key={i} className="glass p-8 md:p-10 rounded-[32px] md:rounded-[40px] border-border relative bg-card">
             <div className="absolute -top-4 -left-4 w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl md:rounded-2xl flex items-center justify-center text-primary">
               <MessageSquare size={20} className="md:w-6 md:h-6" />
             </div>
-            <p className="text-lg md:text-xl font-bold text-slate-800 mb-6">“{t.text}”</p>
+            <p className="text-lg md:text-xl font-bold text-foreground mb-6">“{t.text}”</p>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 shrink-0" />
-              <span className="font-bold text-slate-500 text-sm md:text-base">{t.author}</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-muted shrink-0" />
+              <span className="font-bold text-muted-foreground text-sm md:text-base">{t.author}</span>
             </div>
           </div>
         ))}
@@ -596,7 +596,7 @@ const Testimonials = () => (
 );
 
 const FinalCTA = () => (
-  <section className="py-24 md:py-32 px-4 md:px-6 relative overflow-hidden bg-slate-950">
+  <section className="py-24 md:py-32 px-4 md:px-6 relative overflow-hidden bg-background">
     <div className="absolute inset-0 pointer-events-none">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px]" />
     </div>
@@ -605,7 +605,7 @@ const FinalCTA = () => (
       <motion.h2 
         whileInView={{ opacity: 1, scale: 1 }}
         initial={{ opacity: 0, scale: 0.9 }}
-        className="text-4xl md:text-7xl font-bold text-white tracking-tight leading-tight"
+        className="text-4xl md:text-7xl font-bold text-foreground tracking-tight leading-tight"
       >
         Ready to Scale Your <br />
         <span className="text-primary">Outreach to the Moon?</span>
@@ -618,9 +618,9 @@ const FinalCTA = () => (
         >
           Start Your Free Trial <ArrowRight className="group-hover:translate-x-1 transition-transform" />
         </Link>
-        <div className="flex flex-col sm:flex-row items-center gap-6 text-sm font-bold text-slate-400 uppercase tracking-widest">
+        <div className="flex flex-col sm:flex-row items-center gap-6 text-sm font-bold text-muted-foreground uppercase tracking-widest">
           <span className="flex items-center gap-2"><ShieldCheck size={18} className="text-emerald-500" /> No Credit Card Required</span>
-          <span className="hidden sm:block w-1.5 h-1.5 bg-slate-700 rounded-full" />
+          <span className="hidden sm:block w-1.5 h-1.5 bg-muted rounded-full" />
           <span className="flex items-center gap-2"><Star size={18} className="text-amber-500" /> 10 Free Emails Included</span>
         </div>
       </div>
@@ -629,18 +629,18 @@ const FinalCTA = () => (
 );
 
 const Footer = () => (
-  <footer className="py-12 px-4 md:px-6 border-t border-border/40">
+  <footer className="py-12 px-4 md:px-6 border-t border-border/40 bg-background">
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
           <span className="text-white text-xs font-bold">❄</span>
         </div>
-        <span className="font-bold text-slate-800">Mr. Cold Mail</span>
+        <span className="font-bold text-foreground">Mr. Cold Mail</span>
       </div>
-      <p className="text-xs md:text-sm text-slate-400 font-medium text-center">© 2026 Mr. Cold Mail. All rights reserved.</p>
+      <p className="text-xs md:text-sm text-muted-foreground font-medium text-center">© 2026 Mr. Cold Mail. All rights reserved.</p>
       <div className="flex items-center gap-6">
-        <a href="#" className="text-xs md:text-sm font-bold text-slate-400 hover:text-primary transition-colors">Privacy</a>
-        <a href="#" className="text-xs md:text-sm font-bold text-slate-400 hover:text-primary transition-colors">Terms</a>
+        <a href="#" className="text-xs md:text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+        <a href="#" className="text-xs md:text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Terms</a>
       </div>
     </div>
   </footer>
@@ -680,7 +680,7 @@ const StickyCTA = () => {
 
 export const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Nav />
       <Hero />
       <Problem />
@@ -690,18 +690,18 @@ export const LandingPage = () => {
       
       {/* Free Offer Section */}
       <section className="py-16 md:py-24 px-4 md:px-6 bg-primary/5">
-        <div className="max-w-4xl mx-auto glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-primary/20 text-center space-y-6 md:space-y-8 relative overflow-hidden">
+        <div className="max-w-4xl mx-auto glass p-8 md:p-12 rounded-[32px] md:rounded-[48px] border-primary/20 text-center space-y-6 md:space-y-8 relative overflow-hidden bg-card">
           <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight px-4">Start Free — No Risk</h2>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight px-4">Start Free — No Risk</h2>
           <div className="space-y-4 max-w-md mx-auto px-4">
-            <p className="text-lg md:text-xl text-slate-600 font-medium">Sign up today and get:</p>
+            <p className="text-lg md:text-xl text-muted-foreground font-medium">Sign up today and get:</p>
             <div className="space-y-3">
               {[
                 "🔥 10 FREE AI-generated emails",
                 "👉 No credit card needed",
                 "👉 Try before you pay"
               ].map((item, i) => (
-                <div key={i} className="p-4 bg-white rounded-2xl font-bold text-slate-800 shadow-sm text-sm md:text-base">
+                <div key={i} className="p-4 bg-muted rounded-2xl font-bold text-foreground shadow-sm text-sm md:text-base">
                   {item}
                 </div>
               ))}

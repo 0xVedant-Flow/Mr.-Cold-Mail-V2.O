@@ -30,8 +30,8 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center text-destructive mb-6">
             <span className="text-4xl">⚠️</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-4">Something went wrong</h1>
-          <p className="text-slate-500 max-w-md mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-4">Something went wrong</h1>
+          <p className="text-muted-foreground max-w-md mb-8">
             We've encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
           </p>
           <div className="bg-muted p-4 rounded-xl text-left w-full max-w-lg overflow-auto mb-8">

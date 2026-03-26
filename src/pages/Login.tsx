@@ -48,7 +48,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
       {/* Background Atmosphere */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
@@ -91,15 +91,15 @@ export const Login = () => {
             >
               <span className="text-white text-3xl font-bold">❄</span>
             </motion.div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Welcome Back</h2>
-            <p className="text-slate-400 text-sm font-medium mt-2">Log in to your Mr. Cold Mail account</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Welcome Back</h2>
+            <p className="text-muted-foreground text-sm font-medium mt-2">Log in to your Mr. Cold Mail account</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4 md:space-y-6 relative z-10">
             {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs md:text-sm font-bold rounded-xl">{error}</div>}
             
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 ml-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
                 <User size={12} /> Email Address
               </label>
               <input 
@@ -108,13 +108,13 @@ export const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
                 required
-                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                className="w-full px-6 py-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-muted/80 outline-none font-medium text-foreground transition-all placeholder:text-muted-foreground/50"
               />
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Lock size={12} /> Password
                 </label>
                 <button
@@ -141,7 +141,7 @@ export const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                className="w-full px-6 py-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-muted/80 outline-none font-medium text-foreground transition-all placeholder:text-muted-foreground/50"
               />
             </div>
 
@@ -157,7 +157,7 @@ export const Login = () => {
           </form>
 
           <div className="mt-8 text-center relative z-10">
-            <p className="text-sm text-slate-500 font-medium">
+            <p className="text-sm text-muted-foreground font-medium">
               Don't have an account? <Link to="/signup" className="text-primary font-bold hover:text-primary/80 transition-colors">Sign Up</Link>
             </p>
           </div>

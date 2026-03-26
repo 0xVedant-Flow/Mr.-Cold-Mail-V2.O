@@ -20,7 +20,7 @@ import {
   AreaChart, 
   Area 
 } from 'recharts';
-import { api } from '../../lib/api';
+import { cn } from '../../lib/utils';
 import { useStore } from '../../store/useStore';
 
 const AdminDashboard: React.FC = () => {
@@ -31,7 +31,11 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await api.get('/admin/stats', { headers: { 'x-user-id': user?.id } });
+        const response = await fetch('/api/admin/stats', { 
+          headers: { 'x-user-id': user?.id || '' } 
+        });
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        const data = await response.json();
         setStats(data);
       } catch (error) {
         console.error('Failed to fetch admin stats:', error);
@@ -56,22 +60,22 @@ const AdminDashboard: React.FC = () => {
   ];
 
   const StatCard = ({ icon: Icon, label, value, trend, trendValue, color }: any) => (
-    <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
+    <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <div className={clsx("p-3 rounded-xl", color)}>
+        <div className={cn("p-3 rounded-xl", color)}>
           <Icon className="w-6 h-6 text-white" />
         </div>
-        <div className={clsx(
+        <div className={cn(
           "flex items-center gap-1 text-sm font-bold",
-          trend === 'up' ? "text-emerald-500" : "text-rose-500"
+          trend === 'up' ? "text-emerald-500" : "text-destructive"
         )}>
           {trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
           {trendValue}
         </div>
       </div>
       <div>
-        <p className="text-sm font-medium text-black/40 uppercase tracking-wider mb-1">{label}</p>
-        <h3 className="text-3xl font-bold text-black tracking-tight">{value}</h3>
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+        <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
       </div>
     </div>
   );
@@ -116,13 +120,13 @@ const AdminDashboard: React.FC = () => {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-2xl border border-black/5 shadow-sm">
+        <div className="bg-card p-8 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-black flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-500" />
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
               User Growth
             </h3>
-            <select className="bg-black/5 border-none rounded-lg text-sm font-medium px-3 py-1 text-black/60 outline-none">
+            <select className="bg-muted border-none rounded-lg text-sm font-medium px-3 py-1 text-muted-foreground outline-none">
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>
@@ -132,30 +136,30 @@ const AdminDashboard: React.FC = () => {
               <AreaChart data={data}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000005" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000040' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000040' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', color: '#fff' }}
-                  itemStyle={{ color: '#fff' }}
+                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)' }}
+                  itemStyle={{ color: 'var(--foreground)' }}
                 />
-                <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                <Area type="monotone" dataKey="users" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl border border-black/5 shadow-sm">
+        <div className="bg-card p-8 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold text-black flex items-center gap-2">
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Activity className="w-5 h-5 text-emerald-500" />
               Email Usage
             </h3>
-            <select className="bg-black/5 border-none rounded-lg text-sm font-medium px-3 py-1 text-black/60 outline-none">
+            <select className="bg-muted border-none rounded-lg text-sm font-medium px-3 py-1 text-muted-foreground outline-none">
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>
@@ -163,12 +167,12 @@ const AdminDashboard: React.FC = () => {
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000005" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000040' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000040' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', color: '#fff' }}
-                  itemStyle={{ color: '#fff' }}
+                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)' }}
+                  itemStyle={{ color: 'var(--foreground)' }}
                 />
                 <Line type="monotone" dataKey="emails" stroke="#10b981" strokeWidth={3} dot={false} />
               </LineChart>
@@ -178,21 +182,21 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-black/5 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-black">Recent Activity</h3>
-          <button className="text-sm font-bold text-indigo-500 hover:text-indigo-600 transition-colors">View All</button>
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="p-8 border-b border-border flex items-center justify-between">
+          <h3 className="text-lg font-bold text-foreground">Recent Activity</h3>
+          <button className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">View All</button>
         </div>
-        <div className="divide-y divide-black/5">
+        <div className="divide-y divide-border">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="p-6 flex items-center justify-between hover:bg-black/[0.01] transition-colors">
+            <div key={i} className="p-6 flex items-center justify-between hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center font-bold text-black">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-foreground">
                   JD
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-black">John Doe signed up</p>
-                  <p className="text-xs text-black/40 font-medium">john@example.com • 2 hours ago</p>
+                  <p className="text-sm font-bold text-foreground">John Doe signed up</p>
+                  <p className="text-xs text-muted-foreground font-medium">john@example.com • 2 hours ago</p>
                 </div>
               </div>
               <div className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">

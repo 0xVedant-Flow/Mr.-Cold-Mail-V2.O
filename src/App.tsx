@@ -80,9 +80,9 @@ export default function App() {
           </div>
 
           <div className="space-y-4">
-            <div className="p-4 bg-slate-900 rounded-xl overflow-hidden">
+            <div className="p-4 bg-muted rounded-xl overflow-hidden">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">SQL Schema</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">SQL Schema</span>
                 <button 
                   onClick={() => {
                     const sql = document.getElementById('sql-schema')?.innerText;
@@ -93,7 +93,7 @@ export default function App() {
                   Copy SQL
                 </button>
               </div>
-              <pre id="sql-schema" className="text-[10px] text-slate-300 font-mono overflow-x-auto max-h-[300px] whitespace-pre-wrap">
+              <pre id="sql-schema" className="text-[10px] text-muted-foreground/80 font-mono overflow-x-auto max-h-[300px] whitespace-pre-wrap">
 {`-- 1. Create users table
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
@@ -206,8 +206,8 @@ CREATE TRIGGER on_auth_user_created
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-bold text-slate-700">How to fix this:</p>
-              <ol className="text-sm text-slate-500 space-y-2 list-decimal list-inside">
+              <p className="text-sm font-bold text-foreground">How to fix this:</p>
+              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                 <li>Go to your <b>Supabase Dashboard</b></li>
                 <li>Open the <b>SQL Editor</b> in the left sidebar</li>
                 <li>Click <b>New Query</b> and paste the SQL code above</li>
@@ -233,7 +233,7 @@ CREATE TRIGGER on_auth_user_created
             <p className="text-slate-500 font-medium">
               Please set your <b>VITE_SUPABASE_URL</b> and <b>VITE_SUPABASE_ANON_KEY</b> in the Secrets panel to enable authentication and database features.
             </p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground/60">
               Current URL: {supabaseUrl || 'undefined'}
             </p>
           </div>

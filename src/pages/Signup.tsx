@@ -59,7 +59,7 @@ export const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
       {/* Background Atmosphere */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
@@ -101,11 +101,11 @@ export const Signup = () => {
             >
               <Sparkles size={24} />
             </motion.div>
-            <h1 className="text-5xl font-bold text-white leading-tight tracking-tight">
+            <h1 className="text-5xl font-bold text-foreground leading-tight tracking-tight">
               The Future of <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-emerald-400">Cold Outreach</span> is Here.
             </h1>
-            <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+            <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
               Join 5,000+ top-performing sales teams who use Mr. Cold Mail to turn cold leads into warm conversations.
             </p>
           </div>
@@ -127,20 +127,20 @@ export const Signup = () => {
                   <CheckCircle2 size={18} />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold">{item.title}</h3>
-                  <p className="text-slate-500 text-sm">{item.desc}</p>
+                  <h3 className="text-foreground font-bold">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          <div className="pt-8 border-t border-white/5">
-            <p className="text-slate-500 text-sm italic">"Mr. Cold Mail doubled our meeting rate in the first month. It's a game changer."</p>
+          <div className="pt-8 border-t border-border">
+            <p className="text-muted-foreground text-sm italic">"Mr. Cold Mail doubled our meeting rate in the first month. It's a game changer."</p>
             <div className="flex items-center gap-3 mt-4">
-              <img src="https://i.pravatar.cc/150?u=sarah" alt="User" className="w-10 h-10 rounded-full border border-white/10" />
+              <img src="https://i.pravatar.cc/150?u=sarah" alt="User" className="w-10 h-10 rounded-full border border-border" />
               <div>
-                <p className="text-white text-sm font-bold">Sarah Jenkins</p>
-                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold">Head of Sales, TechFlow</p>
+                <p className="text-foreground text-sm font-bold">Sarah Jenkins</p>
+                <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">Head of Sales, TechFlow</p>
               </div>
             </div>
           </div>
@@ -161,8 +161,8 @@ export const Signup = () => {
               <div className="lg:hidden w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-4">
                 <span className="text-white text-xl font-bold">❄</span>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Create Account</h2>
-              <p className="text-slate-400 text-sm font-medium mt-2">Start your 14-day free trial today</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Create Account</h2>
+              <p className="text-muted-foreground text-sm font-medium mt-2">Start your 14-day free trial today</p>
             </div>
 
             <form onSubmit={handleSignup} className="space-y-4 md:space-y-6 relative z-10">
@@ -176,8 +176,8 @@ export const Signup = () => {
                   <div className="flex items-center gap-2 text-emerald-400 font-bold">
                     <Sparkles size={18} /> Check your email!
                   </div>
-                  <p className="text-xs md:text-sm text-slate-400 font-medium leading-relaxed">
-                    We've sent a confirmation link to <span className="font-bold text-white">{email}</span>. 
+                  <p className="text-xs md:text-sm text-muted-foreground font-medium leading-relaxed">
+                    We've sent a confirmation link to <span className="font-bold text-foreground">{email}</span>. 
                   </p>
                   <div className="p-3 bg-primary/10 rounded-xl text-[10px] text-primary font-bold uppercase tracking-widest">
                     Tip: Check your spam folder if it doesn't arrive in 2 minutes.
@@ -197,7 +197,7 @@ export const Signup = () => {
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="John Doe"
                       required
-                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                      className="w-full px-6 py-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-muted/80 outline-none font-medium text-foreground transition-all placeholder:text-muted-foreground/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -210,7 +210,7 @@ export const Signup = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@company.com"
                       required
-                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                      className="w-full px-6 py-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-muted/80 outline-none font-medium text-foreground transition-all placeholder:text-muted-foreground/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -223,7 +223,7 @@ export const Signup = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-white/10 outline-none font-medium text-white transition-all placeholder:text-slate-600"
+                      className="w-full px-6 py-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:bg-muted/80 outline-none font-medium text-foreground transition-all placeholder:text-muted-foreground/50"
                     />
                   </div>
                   <motion.button 
@@ -240,7 +240,7 @@ export const Signup = () => {
             </form>
 
             <div className="mt-8 text-center relative z-10">
-              <p className="text-sm text-slate-500 font-medium">
+              <p className="text-sm text-muted-foreground font-medium">
                 Already have an account? <Link to="/login" className="text-primary font-bold hover:text-primary/80 transition-colors">Log In</Link>
               </p>
             </div>

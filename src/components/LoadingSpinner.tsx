@@ -25,6 +25,6 @@ export const LoadingSpinner = ({ className, size = 'md' }: Props) => {
 export const FullPageLoading = ({ message }: { message?: string }) => (
   <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
     <LoadingSpinner size="lg" />
-    {message && <p className="text-slate-500 font-medium animate-pulse">{message}</p>}
+    {message && <p className="text-muted-foreground font-medium animate-pulse">{message}</p>}
   </div>
 );
