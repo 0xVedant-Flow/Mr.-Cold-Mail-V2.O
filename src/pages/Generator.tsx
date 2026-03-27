@@ -115,9 +115,13 @@ export const Generator = () => {
       });
 
       const data = await response.json();
+      console.log("API Response:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate email');
+        const errorMsg = data.details 
+          ? `${data.error}: ${data.details}${data.hint ? ` (${data.hint})` : ''}`
+          : data.error || 'Failed to generate email';
+        throw new Error(errorMsg);
       }
 
       setVariations(data.variations);

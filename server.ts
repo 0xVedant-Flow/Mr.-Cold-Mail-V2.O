@@ -235,8 +235,25 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
 app.use(express.json({ limit: "50mb" }));
 
 // --- API Routes ---
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/api/health", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("users").select("count").limit(1);
+    if (error) throw error;
+    res.json({ 
+      status: "ok", 
+      database: "connected",
+      openai: !!process.env.OPENAI_API_KEY,
+      supabase: !!process.env.VITE_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      status: "error", 
+      message: error.message,
+      code: error.code,
+      hint: "Database might not be initialized. Run the SQL setup in Supabase."
+    });
+  }
 });
 
 // 1. Credits Check Middleware
@@ -293,23 +310,55 @@ const checkCredits = async (req: any, res: any, next: any) => {
     }
 
     if (!authUser) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found in Auth system" });
     }
 
     // Create the user record using upsert to be safe
     const userEmail = authUser.email || `user-${userId}@placeholder.com`;
-    const { data: newUser, error: createError } = await supabase
+    console.log(`Upserting user ${userId} with email ${userEmail}...`);
+    
+    const userData = {
+      id: userId,
+      email: userEmail,
+      full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || '',
+      avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || '',
+      plan: 'free',
+      status: 'active',
+      role: 'user',
+      updated_at: new Date().toISOString()
+    };
+
+    console.log(`Attempting upsert for user ${userId}...`);
+    let { data: newUser, error: createError } = await supabase
       .from("users")
-      .upsert({
-        id: userId,
-        email: userEmail,
-        full_name: authUser.user_metadata?.full_name || '',
-        plan: 'free',
-        credits: 10,
-        status: 'active'
-      }, { onConflict: 'id' })
+      .upsert(userData, { onConflict: 'id' })
       .select()
       .single();
+
+    if (createError) {
+      console.warn("Primary upsert failed, trying minimal upsert...", createError.message);
+      // Minimal upsert in case of schema mismatch
+      const { data: minimalUser, error: minimalError } = await supabase
+        .from("users")
+        .upsert({
+          id: userId,
+          email: userEmail,
+          plan: 'free',
+          status: 'active',
+          role: 'user'
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+        
+      if (minimalError) {
+        console.error("Minimal upsert also failed:", minimalError.message);
+        createError = minimalError;
+      } else {
+        console.log("Minimal upsert successful.");
+        newUser = minimalUser;
+        createError = null;
+      }
+    }
 
     if (createError) {
       console.error("Detailed Error creating user record:", {
@@ -318,33 +367,49 @@ const checkCredits = async (req: any, res: any, next: any) => {
         details: createError.details,
         hint: createError.hint,
         userId,
-        email: userEmail,
-        metadata: authUser.user_metadata
+        email: userEmail
       });
-      return res.status(500).json({ 
-        error: "Failed to initialize user profile",
-        details: createError.message,
-        code: createError.code
-      });
+      
+      // Fallback: Try to fetch again in case it was created by a trigger in the meantime
+      const { data: fallbackUser, error: fallbackError } = await supabase
+        .from("users")
+        .select("plan, status")
+        .eq("id", userId)
+        .single();
+        
+      if (!fallbackError && fallbackUser) {
+        console.log("Fallback: User record found after failed upsert.");
+        user = fallbackUser;
+      } else {
+        return res.status(500).json({ 
+          error: "Failed to initialize user profile",
+          details: createError.message,
+          code: createError.code,
+          hint: "Ensure you have run the database setup SQL in the Supabase SQL Editor."
+        });
+      }
+    } else {
+      user = newUser;
     }
 
-    // Also create/update credits record
-    const { error: creditsUpsertError } = await supabase.from("credits").upsert({
-      user_id: userId,
-      total_credits: 10,
-      used_credits: 0
-    });
+    // Also create/update credits record if we successfully have a user
+    if (user) {
+      const { error: creditsUpsertError } = await supabase.from("credits").upsert({
+        user_id: userId,
+        total_credits: 10,
+        used_credits: 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
 
-    if (creditsUpsertError) {
-      console.error("Error creating credits record:", {
-        message: creditsUpsertError.message,
-        code: creditsUpsertError.code,
-        details: creditsUpsertError.details,
-        userId
-      });
+      if (creditsUpsertError) {
+        console.error("Error creating credits record:", {
+          message: creditsUpsertError.message,
+          code: creditsUpsertError.code,
+          details: creditsUpsertError.details,
+          userId
+        });
+      }
     }
-
-    user = newUser;
   }
 
   if (user && user.status !== 'active') {
@@ -388,6 +453,7 @@ const generateEmailSchema = z.object({
   offer: z.string().min(10),
   tone: z.string().default('Professional'),
   goal: z.string().default('Book a Meeting'),
+  leadId: z.string().uuid().optional(),
 });
 
 // 2. Generate Email
@@ -397,9 +463,10 @@ app.post("/api/generate-email", checkCredits, async (req, res) => {
     return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
   }
 
-  const { userId, leadName, company, website, offer, tone, goal } = validation.data;
+  const { userId, leadName, company, website, offer, tone, goal, leadId } = validation.data;
 
   try {
+    console.log(`Generating email for ${leadName} at ${company}...`);
     const prompt = `You are a world-class SaaS founder and senior AI engineer at "Mr. Cold Mail".
 Your mission is to write a short, high-impact, hyper-personalized cold email that feels like a 1-to-1 message from a peer.
 
@@ -429,16 +496,37 @@ Output Format (JSON ONLY):
   ]
 }`;
 
+    console.log("Calling OpenAI with model gpt-4o-mini...");
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "You are a world-class cold email copywriter. You output ONLY valid JSON." },
+        { role: "system", content: "You are a world-class cold email copywriter. You output ONLY valid JSON in the specified format." },
         { role: "user", content: prompt }
       ],
       response_format: { type: "json_object" },
     });
 
-    const content = JSON.parse(completion.choices[0].message.content || "{}");
+    const rawContent = completion.choices[0].message.content;
+    console.log("OpenAI raw response received. Length:", rawContent?.length);
+    
+    if (!rawContent) {
+      console.error("OpenAI returned an empty response.");
+      throw new Error("OpenAI returned an empty response");
+    }
+
+    let content;
+    try {
+      content = JSON.parse(rawContent);
+    } catch (parseError: any) {
+      console.error("Error parsing OpenAI response:", parseError.message);
+      console.error("Raw content that failed parsing:", rawContent);
+      throw new Error("Failed to parse AI response: " + parseError.message);
+    }
+    
+    console.log("Parsed variations from OpenAI content:", !!content.variations);
+    if (content.variations) {
+      console.log("Number of variations:", content.variations.length);
+    }
     const variations = content.variations || [];
 
     if (variations.length === 0) {
@@ -455,9 +543,21 @@ Output Format (JSON ONLY):
           company: company,
           subject: variations[0].subject,
           email_body: variations[0].body,
+          tone,
+          goal,
+          lead_id: leadId
         });
 
       if (emailError) console.error("Error saving to history:", emailError);
+
+      // Also save to emails table if leadId is provided (for campaign updates)
+      if (leadId) {
+        await supabase.from("emails").insert({
+          lead_id: leadId,
+          subject: variations[0].subject,
+          body: variations[0].body,
+        });
+      }
 
       // Deduct credit using the correct RPC name from schema
       await supabase.rpc("increment_used_credits", { user_id_param: userId });
@@ -488,6 +588,32 @@ app.post("/api/bulk-generate", checkCredits, async (req, res) => {
   const { userId, campaignId, offer, tone, goal } = validation.data;
 
   try {
+    // We trigger it and return success immediately, or await it?
+    // The frontend expects a success response.
+    // Since it might take a while, we can run it in background or await if we want to show results.
+    // The previous implementation awaited it.
+    
+    await generateEmailsForCampaign(userId, campaignId, offer, tone, goal);
+
+    res.json({ success: true, message: "Bulk generation completed" });
+  } catch (error: any) {
+    console.error("Bulk Generate Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const uploadCsvSchema = z.object({
+  userId: z.string().uuid(),
+  campaignId: z.string().uuid(),
+  csvData: z.string().min(1),
+  offer: z.string().optional(),
+  tone: z.string().optional(),
+  goal: z.string().optional(),
+});
+
+// Helper function for bulk generation
+async function generateEmailsForCampaign(userId: string, campaignId: string, offer: string, tone: string, goal: string) {
+  try {
     // 1. Get leads for this campaign
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
@@ -495,34 +621,33 @@ app.post("/api/bulk-generate", checkCredits, async (req, res) => {
       .eq("campaign_id", campaignId);
 
     if (leadsError || !leads || leads.length === 0) {
-      return res.status(404).json({ error: "No leads found for this campaign" });
+      console.error("No leads found for campaign:", campaignId);
+      return;
     }
 
-    // 2. Check if user has enough credits (if logged in)
-    if (userId) {
-      const { data: credits, error: creditsError } = await supabase
-        .from("credits")
-        .select("total_credits, used_credits")
-        .eq("user_id", userId)
-        .single();
+    // 2. Check if user has enough credits
+    const { data: credits, error: creditsError } = await supabase
+      .from("credits")
+      .select("total_credits, used_credits")
+      .eq("user_id", userId)
+      .single();
 
-      if (creditsError || !credits) {
-        return res.status(404).json({ error: "Credits not found" });
-      }
-
-      const remainingCredits = credits.total_credits - credits.used_credits;
-      if (remainingCredits < leads.length) {
-        return res.status(403).json({ error: `Not enough credits. You need ${leads.length} credits but have ${remainingCredits}.` });
-      }
+    if (creditsError || !credits) {
+      console.error("Credits not found for user:", userId);
+      return;
     }
 
-    // 3. Generate emails in parallel (with a limit to avoid rate limits)
-    // For simplicity, we'll do them in chunks or just map them if the list is small.
-    // In production, use a queue system.
-    const results = [];
+    const remainingCredits = credits.total_credits - credits.used_credits;
+    const leadsToProcess = Math.min(leads.length, remainingCredits);
+
+    if (leadsToProcess <= 0) {
+      console.error("Not enough credits for user:", userId);
+      return;
+    }
+
+    // 3. Generate emails in parallel
     const batchSize = 5;
-    
-    for (let i = 0; i < leads.length; i += batchSize) {
+    for (let i = 0; i < leadsToProcess; i += batchSize) {
       const batch = leads.slice(i, i + batchSize);
       const batchPromises = batch.map(async (lead) => {
         try {
@@ -554,44 +679,39 @@ Return JSON: { "subject": "...", "body": "..." }`;
 
           const content = JSON.parse(completion.choices[0].message.content || "{}");
           
-          // Save to generated_emails if logged in
-          if (userId) {
-            await supabase.from("generated_emails").insert({
-              user_id: userId,
-              lead_name: lead.name,
-              company: lead.company,
-              subject: content.subject,
-              email_body: content.body,
-              lead_id: lead.id
-            });
+          // Save to emails table (this is what the campaign page listens to)
+          await supabase.from("emails").insert({
+            lead_id: lead.id,
+            subject: content.subject,
+            body: content.body,
+          });
 
-            // Deduct credit using correct RPC
-            await supabase.rpc("increment_used_credits", { user_id_param: userId });
-          }
+          // Also save to generated_emails for history
+          await supabase.from("generated_emails").insert({
+            user_id: userId,
+            lead_name: lead.name,
+            company: lead.company,
+            subject: content.subject,
+            email_body: content.body,
+            lead_id: lead.id,
+            tone: tone,
+            goal: goal
+          });
 
-          return { success: true, leadId: lead.id };
+          // Deduct credit
+          await supabase.rpc("increment_used_credits", { user_id_param: userId });
+
         } catch (err) {
           console.error(`Error generating for lead ${lead.id}:`, err);
-          return { success: false, leadId: lead.id, error: err.message };
         }
       });
 
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
+      await Promise.all(batchPromises);
     }
-
-    res.json({ success: true, results });
-  } catch (error: any) {
-    console.error("Bulk Generate Error:", error);
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    console.error("Background Generation Error:", error);
   }
-});
-
-const uploadCsvSchema = z.object({
-  userId: z.string().uuid(),
-  campaignId: z.string().uuid(),
-  csvData: z.string().min(1),
-});
+}
 
 // 3. Upload CSV
 app.post("/api/upload-csv", async (req, res) => {
@@ -600,9 +720,22 @@ app.post("/api/upload-csv", async (req, res) => {
     return res.status(400).json({ error: "Invalid request data", details: validation.error.format() });
   }
 
-  const { userId, campaignId, csvData } = validation.data;
+  const { userId, campaignId, csvData, offer, tone, goal } = validation.data;
 
   try {
+    // Update campaign with offer, tone, goal if provided (wrap in try-catch in case columns are missing)
+    try {
+      if (offer || tone || goal) {
+        await supabase.from("campaigns").update({
+          offer,
+          tone,
+          goal
+        }).eq("id", campaignId);
+      }
+    } catch (err) {
+      console.warn("Failed to update campaign metadata (possibly missing columns):", err);
+    }
+
     // Parse CSV with PapaParse
     const results = Papa.parse(csvData, { 
       header: true,
@@ -661,10 +794,15 @@ app.post("/api/upload-csv", async (req, res) => {
       throw error;
     }
 
+    // Trigger background generation
+    if (offer && tone && goal) {
+      generateEmailsForCampaign(userId, campaignId, offer, tone, goal);
+    }
+
     res.json({ 
       success: true, 
       count: data.length,
-      message: `Successfully uploaded ${data.length} leads.`
+      message: `Successfully uploaded ${data.length} leads. Email generation started in background.`
     });
   } catch (error: any) {
     console.error("Upload CSV Error:", error);

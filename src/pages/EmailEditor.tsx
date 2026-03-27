@@ -35,6 +35,50 @@ export const EmailEditor = () => {
   const [emails, setEmails] = React.useState<any[]>([]);
   const [search, setSearch] = React.useState('');
   const [isCopied, setIsCopied] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+
+  const handleRegenerate = async (leadId?: string) => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    try {
+      if (leadId) {
+        // Single lead generation
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead) return;
+
+        const response = await api.post('/generate-email', {
+          userId: user?.id,
+          leadName: lead.name,
+          company: lead.company,
+          website: lead.website,
+          offer: campaign?.offer || 'Our cold email outreach services',
+          tone: campaign?.tone || 'Professional',
+          goal: campaign?.goal || 'Book a Meeting',
+          leadId: lead.id
+        });
+
+        if (response.error) throw new Error(response.error);
+        
+        // The real-time subscription will pick up the new email
+      } else {
+        // Bulk generation
+        const response = await api.post('/bulk-generate', {
+          userId: user?.id,
+          campaignId: id,
+          offer: campaign?.offer || 'Our cold email outreach services',
+          tone: campaign?.tone || 'Professional',
+          goal: campaign?.goal || 'Book a Meeting'
+        });
+
+        if (response.error) throw new Error(response.error);
+      }
+    } catch (err: any) {
+      console.error('Generation Error:', err);
+      alert('Failed to generate email: ' + err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCampaignData = async () => {
@@ -263,7 +307,15 @@ export const EmailEditor = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                  <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-muted-foreground">
+                  <button 
+                    onClick={() => handleRegenerate(activeLead.id)}
+                    disabled={isGenerating}
+                    className={cn(
+                      "p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-muted-foreground",
+                      isGenerating && "animate-spin"
+                    )}
+                    title="Regenerate Email"
+                  >
                     <RefreshCw size={18} className="md:w-5 md:h-5" />
                   </button>
                   <button className="p-2 md:p-4 rounded-2xl glass hover:bg-muted transition-all text-muted-foreground">
@@ -298,6 +350,15 @@ export const EmailEditor = () => {
                     <div className="max-w-sm px-4">
                       <h4 className="text-lg md:text-xl font-bold text-foreground">Generating Magic...</h4>
                       <p className="text-sm md:text-base text-muted-foreground font-medium mt-2">Our AI is crafting a perfectly personalized email for {activeLead.name}.</p>
+                      
+                      <button 
+                        onClick={() => handleRegenerate(activeLead.id)}
+                        disabled={isGenerating}
+                        className="mt-6 px-6 py-3 bg-primary/10 text-primary rounded-xl font-bold text-sm hover:bg-primary/20 transition-all flex items-center gap-2 mx-auto"
+                      >
+                        {isGenerating ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        {isGenerating ? 'Generating...' : 'Retry Generation'}
+                      </button>
                     </div>
                   </div>
                 )}

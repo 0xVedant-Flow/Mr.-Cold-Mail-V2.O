@@ -6,12 +6,12 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   plan TEXT DEFAULT 'free',
   role TEXT DEFAULT 'user',
-  credits INTEGER DEFAULT 10,
   subscription_id TEXT,
   status TEXT DEFAULT 'active',
   default_tone TEXT DEFAULT 'Professional',
   default_goal TEXT DEFAULT 'Book a Meeting',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- Create campaigns table
@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS campaigns (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
+  offer TEXT,
+  tone TEXT,
+  goal TEXT,
   status TEXT DEFAULT 'draft' NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -193,6 +196,9 @@ CREATE TABLE IF NOT EXISTS generated_emails (
   company TEXT NOT NULL,
   subject TEXT NOT NULL,
   email_body TEXT NOT NULL,
+  tone TEXT,
+  goal TEXT,
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -208,8 +214,8 @@ CREATE POLICY "Users can delete their own generated emails" ON generated_emails 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.users (id, email, full_name, plan, credits, status)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'free', 10, 'active')
+  INSERT INTO public.users (id, email, full_name, plan, status)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'free', 'active')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO public.credits (user_id, total_credits, used_credits)

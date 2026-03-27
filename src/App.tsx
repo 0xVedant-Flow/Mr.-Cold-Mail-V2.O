@@ -100,13 +100,14 @@ CREATE TABLE IF NOT EXISTS public.users (
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
   avatar_url TEXT,
+  role TEXT DEFAULT 'user',
   plan TEXT DEFAULT 'free',
-  credits INTEGER DEFAULT 10,
+  status TEXT DEFAULT 'active',
   subscription_id TEXT,
-  subscription_status TEXT,
   default_tone TEXT DEFAULT 'Professional',
   default_goal TEXT DEFAULT 'Book a Meeting',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- 2. Create campaigns table
@@ -155,21 +156,59 @@ CREATE TABLE IF NOT EXISTS public.generated_emails (
   lead_email TEXT,
   company TEXT,
   subject TEXT,
-  body TEXT,
+  email_body TEXT,
   tone TEXT,
   goal TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 7. Enable RLS
+-- 7. Create subscriptions table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  plan TEXT NOT NULL,
+  status TEXT NOT NULL,
+  stripe_subscription_id TEXT,
+  stripe_customer_id TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 8. Create gmail_accounts table
+CREATE TABLE IF NOT EXISTS public.gmail_accounts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expiry_date BIGINT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 9. Create sent_emails table
+CREATE TABLE IF NOT EXISTS public.sent_emails (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+  recipient_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  status TEXT DEFAULT 'sent' NOT NULL,
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 10. Enable RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE credits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE generated_emails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gmail_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sent_emails ENABLE ROW LEVEL SECURITY;
 
--- 8. RLS Policies
+-- 11. RLS Policies
 CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can view their own campaigns" ON campaigns FOR SELECT USING (auth.uid() = user_id);
@@ -182,13 +221,16 @@ CREATE POLICY "Users can view emails of their leads" ON emails FOR SELECT USING 
 CREATE POLICY "Users can view their own credits" ON credits FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can view their own generated emails" ON generated_emails FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own generated emails" ON generated_emails FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view their own subscriptions" ON subscriptions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own gmail accounts" ON gmail_accounts FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own sent emails" ON sent_emails FOR SELECT USING (auth.uid() = user_id);
 
--- 9. Trigger to create user profile and credits on signup
+-- 12. Trigger to create user profile and credits on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.users (id, email, full_name)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name')
+  INSERT INTO public.users (id, email, full_name, status, role)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'active', 'user')
   ON CONFLICT (id) DO NOTHING;
   
   INSERT INTO public.credits (user_id, total_credits, used_credits)
@@ -201,7 +243,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();`}
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- 13. Function to increment used credits
+CREATE OR REPLACE FUNCTION public.increment_used_credits(user_id_param UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.credits
+  SET used_credits = used_credits + 1,
+      updated_at = NOW()
+  WHERE user_id = user_id_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;`}
               </pre>
             </div>
 
